@@ -99,13 +99,45 @@ Call `get_html_frame_spec` with the style you chose (`style_config_id` or
   Keep **all** content — text, images, charts, cards, borders, accents — fully outside
   them: overlays are composited after conversion, so anything underneath is covered.
   Never draw the overlay artwork yourself.
+- `charts` — the required Chart.js protocol plus a copy-ready widget. See
+  **Charts** below.
+- `parallelAuthoring` — how to author the whole deck at once. See **Author the deck
+  in parallel** below.
 - `example` — a worked frame showing token usage.
 - `limits` — max frames and per-frame size.
 
 Do not skip this and guess. Colors, fonts, and type sizes invented by you will look
 wrong next to the user's other decks.
 
-### 2. Write one frame per slide
+### 2. Author the deck in parallel, not one slide at a time
+
+Ploxs' own slide painter builds every slide of a deck **concurrently**, and holds the
+deck together purely through the shared style contract plus the deck outline — never by
+showing one slide the previous slide's markup. Author the same way. Going frame-by-frame
+is slow and no more consistent, because each turn re-derives the type scale from scratch.
+
+1. **Spec once.** One `get_html_frame_spec` call for the whole deck. Never per slide.
+2. **Outline first.** One line per slide: number, name, the content it carries, and the
+   archetype from `briefs.layout` it uses. This is the shared plan.
+3. **Fix the shared decisions before authoring anything**: the px size for each semantic
+   role (copy them from `briefs.layout` — don't re-derive per slide), the spacing scale,
+   which palette role paints what, the card/panel treatment, and a per-frame class
+   prefix (`.f1-…`, `.f2-…`) so no two frames collide.
+4. **Fan out.** If you have subagents or parallel tasks, take one frame each (or small
+   groups). Otherwise emit the frames back-to-back in a single turn, and if you're
+   writing them to files, issue those writes as parallel tool calls in one message.
+5. **Give every worker the whole contract, verbatim** — `contract`, `stage`,
+   `colorPalette`, `typography`, `briefs`, `charts` if its slide has a chart, and any
+   `overlays.mandates` for its slide position — plus the outline and the step-3
+   decisions. Workers share no context: whatever you omit gets invented, and invented
+   tokens are exactly what makes a deck look stitched together.
+6. **Reconcile before submitting**: same role → same px size everywhere, one accent
+   focal point per slide, consistent panels, no frame depending on another's classes.
+
+Then one `validate_html_frames` call for all frames, and one
+`create_presentation_from_html` for the deck.
+
+### 3. Write one frame per slide
 
 Each frame is the **inner HTML of one slide**. Ploxs wraps it in
 `<div id="frame-<n>" class="slide">` and centers it on the stage. Non-negotiables
@@ -131,28 +163,64 @@ Each frame is the **inner HTML of one slide**. Ploxs wraps it in
   SVG that inherits `color`. Never hand-draw SVG or use emoji as icons.
 - Images: `<img>` with a `data:` URI or a publicly reachable https URL, always
   `object-fit: contain`, never fixed width *and* height together.
-- Charts: one inline `<script>` per frame is allowed **only** for a Chart.js chart
-  built from real numbers in the content, calling `new Chart(...)` with
-  `animation: false`. Never fabricate data.
+- Charts: one inline `<script>` per frame, only for a Chart.js chart, and only
+  following the protocol in **Charts** below. Never fabricate data.
 
 Practical workflow in a repo: write each frame to a file (`slides/01-title.html`,
 `slides/02-metrics.html`, …), open one in a browser sized to 1280×720 to eyeball it,
 then submit the files' contents in order. Keeping frames on disk makes revisions and
 re-submissions cheap, and gives the user something to review.
 
-### 3. Validate before submitting
+### 4. Charts
 
-Call `validate_html_frames` with the frames array. It's free — no credits, no job.
+A chart is the one place a frame runs JavaScript, and it has a **required protocol**.
+The reason: a `<canvas>` is opaque to the converter, so chart pixels only reach the deck
+through a pre-render pass that captures each canvas by id and swaps in a PNG. Every way
+of getting this wrong fails *silently* — the slide exports with an empty box.
 
-- `errors` block submission: fix them and re-validate.
+`spec.charts` gives you `rules`, the pinned `libraryUrl`, and a complete working
+`example`. **Copy the example's plumbing verbatim and change only the data, chart type,
+labels, and colors.** Don't write the loader from memory. The four things that must be
+right:
+
+1. **Unique `<canvas id="chart-…">`** — capture is keyed by id. No id, no chart.
+2. **Load Chart.js inside your inline script** using the example's parallel-safe
+   pattern (`typeof Chart === 'undefined'` → append a script element with
+   `spec.charts.libraryUrl`). A bare `<script src="…">` tag is rejected by validation.
+3. **`ctx.dataset.initialized = 'true'`** before `new Chart(...)` — the readiness signal
+   the exporter waits on. Without it the slide burns a 5-second timeout.
+4. **`animation: false`** in options, plus `responsive: true` and
+   `maintainAspectRatio: true`, or the capture catches the chart half-drawn.
+
+Then: real numbers from the slide's content only; palette colors (primary for the main
+series, secondary/accent for supporting, textMuted for grid lines, ticks and legend);
+14–16px chart fonts so it reads when projected; `aspectRatio` per chart type from
+`rules`; the chart as the frame's hero with a short heading above and at most one line
+of annotation below; and never restate the chart's numbers as body text beside it.
+
+`validate_html_frames` reports all of these — `canvas_missing_id`,
+`chart_loader_missing`, `chart_without_canvas` and `canvas_without_chart` are errors;
+`chart_ready_flag_missing` and `chart_animation_enabled` are warnings you should still
+fix. Treat any chart warning as a defect: the chart will not export as intended.
+
+If a slide's data doesn't genuinely need a chart, express it as markup — a stat row, a
+comparison table, a labelled bar built from divs — which converts to native, editable
+Google Slides shapes instead of a flat image.
+
+### 5. Validate before submitting
+
+One `validate_html_frames` call with **all** the deck's frames — not one call per frame.
+It's free: no credits, no job.
+
+- `errors` block submission: fix them and re-validate once.
 - `warnings` are accepted but tell you the converter will strip or ignore something.
   Fix them anyway unless you have a reason; a warning usually means the slide will
   not look the way you intended.
 
-Validate after the first frame or two rather than after all twenty — the same mistake
-usually repeats across frames.
+Fix every reported frame in one pass — the same mistake almost always repeats across
+frames written in parallel.
 
-### 4. Submit
+### 6. Submit
 
 `create_presentation_from_html` with:
 
@@ -174,7 +242,7 @@ Conversion runs the browser render + native PPTX path, so it is quick (~30–90s
 consumes no text-generation credits, but it does require Drive linked and a billable
 account.
 
-### 5. Revising
+### 7. Revising
 
 To change a slide you authored, prefer re-authoring the frame and resubmitting the
 deck (cheap, deterministic, and your files stay the source of truth). Use `edit_slide`
