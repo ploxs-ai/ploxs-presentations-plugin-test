@@ -31,19 +31,19 @@ slides, add generated images or infographics — work on either.
 - **Your brand, not Claude's taste.** Claude asks the server for your style as concrete
   tokens — stage size, the seven palette colors, the deck's type scale, your brand rules,
   the fonts already loaded — and builds against those. It doesn't invent colors or fonts.
-- **The whole deck at once.** Slides are authored concurrently from one shared design
-  kit, which is how Ploxs' own slide painter works. Expect a deck in one pass, not a
-  slide per message.
-- **Charts are real Chart.js charts**, built only from numbers in your content and
-  captured into the deck during conversion. Claude checks them before submitting, because
-  a chart that breaks the conversion rules would otherwise arrive as an empty box.
+- **Straight to slides.** Once Claude has the information and your style, it writes the
+  whole deck in one pass — every slide at once, no planning documents in between. That's
+  how Ploxs' own slide painter works too.
+- **Charts are real Chart.js charts**, built only from numbers in your material and
+  captured into the deck during conversion. Claude checks chart frames before submitting,
+  because a chart that breaks the conversion rules would otherwise arrive as an empty box.
 - **Built once, then edited in place.** Conversion happens at the initial export. After
   the deck exists, changes go through Ploxs' editing tools on the same Google Slides
   file — so your link stays valid and you don't collect duplicate decks in Drive.
-- **Facts before design.** The skill has Claude pin down every figure — value, period,
-  source, and whether it's reported, guided, or an estimate — before writing any slide,
-  and label anything that isn't a reported actual on the slide itself rather than
-  mentioning it in chat.
+- **Figures stay honest on the slide.** Numbers come from the material you supplied, and
+  anything projected, guided, estimated or dated is labelled on the slide itself
+  (`2026 (guided)`, `as of 2021`) rather than mentioned in chat, where it wouldn't travel
+  with the deck.
 
 ## Install
 
