@@ -68,6 +68,23 @@ In Claude Code:
 /plugin install ploxs-presentations-test@ploxs-test
 ```
 
+## Long-running deck builds
+
+Building a deck takes 1–4 minutes, occasionally longer, and Claude waits for it in a
+single tool call. The server keeps that call open for up to 7 minutes.
+
+Claude Code enforces its own per-call limit, so give it headroom before a slow build:
+
+```sh
+MCP_TOOL_TIMEOUT=450000 claude    # milliseconds
+```
+
+Without it, a long build can trip Claude Code's default timeout mid-wait. Nothing is
+lost when that happens — the job keeps running on the server, and Claude picks it up by
+asking for the job status again — but raising the limit avoids the interruption. In
+Claude Desktop and claude.ai the client's own limit applies and isn't configurable;
+Claude simply resumes waiting if it's cut short.
+
 ## Before it can create decks
 
 Sign in at [test.ploxs.com](https://test.ploxs.com), connect Google Drive in Settings,
