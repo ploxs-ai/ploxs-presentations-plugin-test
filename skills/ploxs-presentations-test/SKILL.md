@@ -47,28 +47,31 @@ A `deck:` style's name describes the deck it came from, **not its colors** — o
 "The Amazon Flywheel" carried a pink palette. Read its `colorPalette` hexes before
 reusing it.
 
-## Which path — default is Ploxs, not you
+## First work out which job this is
 
-**`create_presentation` is the default.** "Make me a presentation about X", "build a deck
-on Y", "create a deck in our brand style" are all `create_presentation` — including when
-you know the topic well, when the user supplies notes, and when a style is named. Ploxs
-writing the slides is the normal path, and it costs you almost no tokens.
+Ploxs does two different things, and neither is an automatic default. Read the request and
+answer one question: **who is producing this deck's content and design — Ploxs, or you and
+the user?**
 
-Author frames yourself (`create_presentation_from_html`) **only** when one of these holds:
+| | |
+|---|---|
+| **Generation** — Ploxs produces the deck | `create_presentation` |
+| **Conversion** — the deck exists; Ploxs exports it | `create_presentation_from_html` |
 
-- the user explicitly asks you to write or design the slides, or the HTML
-- the deck must reproduce content already in this conversation verbatim — analysis you
-  ran, a file you read, a table or figures that must survive exactly
-- the user specified exact layouts
-- the deck must be reproducible from files in a repo
+Points to **generation**: a subject with no drafted content behind it; raw material handed
+over to be turned into slides; the user wants Ploxs' design rather than yours.
 
-If none of those hold, or you're unsure, use `create_presentation`. Don't switch to frames
-because you could design something, because the topic is familiar, or to avoid waiting for
-a job. Whichever you pick, say which one you're using and why in one line.
+Points to **conversion**: the user asks you to write or design the slides or the HTML; the
+deck must reproduce material already in this conversation verbatim (analysis you ran, a
+file you read, a table or figures that must survive exactly); exact layouts were
+specified; the deck must be reproducible from files in a repo.
 
-## Mode A — Ploxs writes and designs the deck
+If it's genuinely ambiguous, **ask one short question** before spending a job — don't guess
+in either direction, and never pick conversion just because you could design something or
+to avoid waiting for a job. Once you've decided, say which one you're doing in a line.
 
-The default. Use when the user hands over raw material or just a topic.
+## Generation — Ploxs writes and designs the deck
+
 **`create_presentation`**:
 
 - `markdown` — notes or outline text; `urls` (≤10) — pages to extract;
@@ -88,10 +91,10 @@ On completion: hand the user `editUrl` / `viewUrl` and **keep the `deckRef`** �
 tool needs it. Daily creation caps apply (25/day wallet accounts, 100/day subscribers);
 `daily_job_limit` is retryable tomorrow, not now.
 
-## Mode B — you author the slides as HTML frames
+## Conversion — you author the slides as HTML frames
 
-Only for the cases listed under **Which path** above. Frames convert exactly as authored —
-no regeneration, no restyling.
+Only when the deck already exists as your work, per the routing above. Frames convert
+exactly as authored — no regeneration, no restyling.
 
 **Call `get_html_frame_spec` with your style, then start writing frames immediately.**
 
@@ -130,8 +133,8 @@ frame.
 
 **`create_presentation_from_html`** — `frames` (`{name, html}` in slide order), `title`
 (plain text, not HTML-escaped), the same style you gave the spec, optional `instructions`
-(stored for later edits) and `export_to_google: false`. Then `wait_for_presentation` as in
-mode A, and keep the `deckRef`.
+(stored for later edits) and `export_to_google: false`. Then `wait_for_presentation` exactly as
+for generation, and keep the `deckRef`.
 
 ## Existing decks
 
