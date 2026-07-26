@@ -59,9 +59,10 @@ Use when the user hands over raw material. **`create_presentation`**:
 - `export_to_google: false` — build the Ploxs deck only, skip the Drive upload
 - `idempotency_key` — optional; retries are already idempotent for ~10 minutes
 
-Then **`wait_for_presentation`** with the `job_id` (`timeout_seconds` 5–300, default 240).
-If it returns `timedOut: true` the job is still running — wait again, don't assume
-failure. **`get_presentation_status`** gives the same job state as a one-shot check.
+Then **`wait_for_presentation`** with the `job_id` (`timeout_seconds` 5–420, default 420 —
+seven minutes, enough for a slow build in one call). If it returns `timedOut: true` the
+job is still running: wait again, don't assume failure. **`get_presentation_status`** gives
+the same job state as a one-shot check.
 
 On completion: hand the user `editUrl` / `viewUrl` and **keep the `deckRef`** — every edit
 tool needs it. Daily creation caps apply (25/day wallet accounts, 100/day subscribers);
@@ -152,7 +153,7 @@ Each takes `deck_ref` plus an optional `idempotency_key`:
   against the deck **as it exists at that step** (an earlier `add_slides` shifts later
   numbers). Stops at the first failure and reports what completed. Prefer this over many
   single calls.
-- **`wait_for_presentation_edit`** — `task_id`, `timeout_seconds` (5–300).
+- **`wait_for_presentation_edit`** — `task_id`, `timeout_seconds` (5–420, default 420).
   **`get_presentation_edit_status`** for a one-shot check. Poll before a dependent edit;
   at most 3 edit tasks active per key.
 
