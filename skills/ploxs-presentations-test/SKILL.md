@@ -47,9 +47,29 @@ A `deck:` style's name describes the deck it came from, **not its colors** — o
 "The Amazon Flywheel" carried a pink palette. Read its `colorPalette` hexes before
 reusing it.
 
+## Which path — default is Ploxs, not you
+
+**`create_presentation` is the default.** "Make me a presentation about X", "build a deck
+on Y", "create a deck in our brand style" are all `create_presentation` — including when
+you know the topic well, when the user supplies notes, and when a style is named. Ploxs
+writing the slides is the normal path, and it costs you almost no tokens.
+
+Author frames yourself (`create_presentation_from_html`) **only** when one of these holds:
+
+- the user explicitly asks you to write or design the slides, or the HTML
+- the deck must reproduce content already in this conversation verbatim — analysis you
+  ran, a file you read, a table or figures that must survive exactly
+- the user specified exact layouts
+- the deck must be reproducible from files in a repo
+
+If none of those hold, or you're unsure, use `create_presentation`. Don't switch to frames
+because you could design something, because the topic is familiar, or to avoid waiting for
+a job. Whichever you pick, say which one you're using and why in one line.
+
 ## Mode A — Ploxs writes and designs the deck
 
-Use when the user hands over raw material. **`create_presentation`**:
+The default. Use when the user hands over raw material or just a topic.
+**`create_presentation`**:
 
 - `markdown` — notes or outline text; `urls` (≤10) — pages to extract;
   `file_texts` (≤20) — pasted document text; `csv_sources` (≤20) — tabular data
@@ -70,10 +90,8 @@ tool needs it. Daily creation caps apply (25/day wallet accounts, 100/day subscr
 
 ## Mode B — you author the slides as HTML frames
 
-Use when the content is already yours: analysis you just ran, a codebase, a report you
-wrote, exact tables and numbers that must survive intact, or layouts the user specified.
-Frames convert exactly as authored — no regeneration, no restyling. Say which mode you're
-using.
+Only for the cases listed under **Which path** above. Frames convert exactly as authored —
+no regeneration, no restyling.
 
 **Call `get_html_frame_spec` with your style, then start writing frames immediately.**
 
