@@ -1,0 +1,15 @@
+{
+  "name": "ploxs-test",
+  "owner": {
+    "name": "Ploxs",
+    "email": "privacy@ploxs.com"
+  },
+  "description": "Ploxs test plugins for Claude",
+  "plugins": [
+    {
+      "name": "ploxs-presentations-test",
+      "source": "./",
+      "description": "Test build: Ploxs presentations against test.ploxs.com, including agent-authored HTML frames."
+    }
+  ]
+}

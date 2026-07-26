@@ -1,0 +1,27 @@
+{
+  "name": "ploxs-presentations-test",
+  "displayName": "Ploxs Presentations (Test)",
+  "version": "1.0.0",
+  "description": "Test build of the Ploxs presentation tools against test.ploxs.com, including agent-authored HTML frames.",
+  "author": {
+    "name": "Ploxs",
+    "email": "privacy@ploxs.com",
+    "url": "https://test.ploxs.com"
+  },
+  "homepage": "https://test.ploxs.com/mcp/setup",
+  "repository": "https://github.com/vipinsanthosh/ploxs-presentations-plugin-test",
+  "license": "MIT",
+  "keywords": [
+    "presentations",
+    "google-slides",
+    "mcp",
+    "html",
+    "testing"
+  ],
+  "mcpServers": {
+    "ploxs-test": {
+      "type": "http",
+      "url": "https://test.ploxs.com/mcp"
+    }
+  }
+}

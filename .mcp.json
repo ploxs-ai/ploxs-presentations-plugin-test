@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "ploxs-test": {
+      "type": "http",
+      "url": "https://test.ploxs.com/mcp"
+    }
+  }
+}
