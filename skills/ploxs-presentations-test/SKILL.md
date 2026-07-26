@@ -26,6 +26,16 @@ mix the two in one conversation.
    Wait with `wait_for_presentation` (jobs) or `wait_for_presentation_edit` (tasks)
    before a dependent change or before telling the user it's done.
 
+## Settle the topic before you build
+
+A style request is not a content request. "Make me a deck in Amazon's style" says
+nothing about what the slides say. If the subject is genuinely unspecified, ask one
+short question and stop — do not guess a topic and burn a deck job on it.
+
+Once the topic is known, decide the slide count yourself unless the user fixed one.
+Let the content decide: one idea per slide, and a slide for every idea that carries
+its own evidence.
+
 ## Two ways to build a deck — choose deliberately
 
 **A. Ploxs generates the slides** (`create_presentation`) — the default when the user
@@ -63,6 +73,15 @@ Exactly one style source per call — combining them errors (`style_choice_confl
   will invent the visual style. Never use it in mode B: frames must be written
   against a style that already exists.
 
+**A `deck:` style's name describes the deck it came from, not how it looks.** A style
+listed as "The Amazon Flywheel" turned out to carry a pink "Cherry Blossom" palette.
+Before reusing any `deck:` style, read its returned `colorPalette` and check the hexes
+actually match what the user is asking for. If they don't, build an inline
+`style_config` instead — a name match is not a brand match.
+
+When you pass an inline config, `get_html_frame_spec` echoes back the palette it
+accepted. Read those hexes and confirm they are yours before authoring against them.
+
 ## Mode A — Ploxs generates the deck
 
 `create_presentation` with the content you have: `markdown` for notes/outline text,
@@ -79,6 +98,10 @@ Daily creation limits apply (25/day wallet accounts, 100/day subscribers);
 `daily_job_limit` is retryable tomorrow, not now.
 
 ## Mode B — author HTML frames yourself
+
+The whole job is **content** and **design**. Get the facts right, then pour them into
+a fixed design kit. Everything below is arranged to keep those two things separate,
+because mixing them is what makes frame authoring slow.
 
 ### 1. Get the spec (mandatory)
 
@@ -101,43 +124,89 @@ Call `get_html_frame_spec` with the style you chose (`style_config_id` or
   Never draw the overlay artwork yourself.
 - `charts` — the required Chart.js protocol plus a copy-ready widget. See
   **Charts** below.
-- `parallelAuthoring` — how to author the whole deck at once. See **Author the deck
-  in parallel** below.
-- `example` — a worked frame showing token usage.
+- `parallelAuthoring` — the deck-at-once protocol, same as steps 3–4 below.
+- `example` — a worked frame showing token usage (and, by omission, showing that
+  frames declare no fonts).
 - `limits` — max frames and per-frame size.
 
 Do not skip this and guess. Colors, fonts, and type sizes invented by you will look
 wrong next to the user's other decks.
 
-### 2. Author the deck in parallel, not one slide at a time
+### 2. Lock the content before you write any HTML
 
-Ploxs' own slide painter builds every slide of a deck **concurrently**, and holds the
-deck together purely through the shared style contract plus the deck outline — never by
-showing one slide the previous slide's markup. Author the same way. Going frame-by-frame
-is slow and no more consistent, because each turn re-derives the type scale from scratch.
+Frames are cheap to lay out and expensive to re-do when a number is wrong. Separate
+the two passes.
 
-1. **Spec once.** One `get_html_frame_spec` call for the whole deck. Never per slide.
-2. **Outline first.** One line per slide: number, name, the content it carries, and the
-   archetype from `briefs.layout` it uses. This is the shared plan.
-3. **Fix the shared decisions before authoring anything**: the px size for each semantic
-   role (copy them from `briefs.layout` — don't re-derive per slide), the spacing scale,
-   which palette role paints what, the card/panel treatment, and a per-frame class
-   prefix (`.f1-…`, `.f2-…`) so no two frames collide.
-4. **Fan out.** If you have subagents or parallel tasks, take one frame each (or small
-   groups). Otherwise emit the frames back-to-back in a single turn, and if you're
-   writing them to files, issue those writes as parallel tool calls in one message.
-5. **Give every worker the whole contract, verbatim** — `contract`, `stage`,
-   `colorPalette`, `typography`, `briefs`, `charts` if its slide has a chart, and any
-   `overlays.mandates` for its slide position — plus the outline and the step-3
-   decisions. Workers share no context: whatever you omit gets invented, and invented
-   tokens are exactly what makes a deck look stitched together.
-6. **Reconcile before submitting**: same role → same px size everywhere, one accent
-   focal point per slide, consistent panels, no frame depending on another's classes.
+**Build a fact table first.** One row per figure that will appear anywhere in the
+deck: value, what it measures, the period it covers, the source, and a status of
+`actual` / `guidance` / `estimate` / `stale`. Research once, into this table; do not
+research per slide.
 
-Then one `validate_html_frames` call for all frames, and one
-`create_presentation_from_html` for the deck.
+Then hold the line on three rules:
 
-### 3. Write one frame per slide
+- **Every number on a slide comes from the table.** If it is not in the table, it does
+  not go on a slide. This is also what makes the chart rule ("only numbers present in
+  the slide's own content") automatic instead of a thing to police.
+- **Anything not `actual` gets labelled on the slide itself**, in the axis label,
+  caption, or badge — `2026 (guided)`, `est.`, `as of 2021`. A caveat you deliver in
+  chat afterwards does not travel with the deck, and the deck is the artifact.
+- **Mixed periods must be visibly distinguished.** A full-year figure and a Q4 figure
+  sitting in the same card row will be read as the same basis unless each card says
+  which it is.
+
+Then write the outline: one line per slide with its number, name, the facts it
+carries, and the archetype from `briefs.layout`. Prose is not an outline — "what this
+slide asserts + which rows of the fact table prove it" is.
+
+### 3. Fix the design kit once, then stop designing
+
+The single biggest waste in frame authoring is writing a bespoke stylesheet per
+frame. Decide the kit once, before any frame, and reuse it verbatim:
+
+- the px size for each semantic role, **copied from `briefs.layout`** — never
+  re-derived per slide;
+- the spacing scale;
+- which palette role paints what, and what the one accent per slide is;
+- the card/panel treatment (surface color, radius, padding).
+
+**Use the same class names in every frame.** Ploxs auto-suffixes class names per
+frame, so `.card` in frame 2 and `.card` in frame 7 cannot collide. Per-frame prefixes
+like `.f1-card` / `.f2-card` buy nothing and multiply every selector you emit. A small
+fixed vocabulary — `.wrap`, `.eyebrow`, `.h`, `.rule`, `.lede`, `.grid`, `.card`,
+`.stat`, `.icon`, `.note` — covers most decks. Each frame then differs only in its
+markup and a few overrides, not in a whole restated stylesheet.
+
+**Declare no `font-family` at all.** The deck document already loads the style's fonts
+and applies the body font to everything plus the heading font to `h1`–`h6`, so a frame
+inherits the correct font with zero declarations. Only write `font-family` to deviate
+deliberately — monospace inside `<code>`/`<pre>`. Restating the stack per selector is
+the single largest source of wasted frame CSS. `spec.typography.note` says the same, and
+both spec examples are written this way.
+
+### 4. Author every frame in one pass
+
+Ploxs' own slide painter builds every slide concurrently, held together by the shared
+style kit plus the outline — never by showing one slide the previous slide's markup.
+Author the same way. Frame-by-frame across turns is slower and no more consistent,
+because each turn re-derives decisions that step 3 already made.
+
+- **With no subagent or task tool — which is the common case — one turn is the
+  parallel path.** Emit all frames back-to-back in a single message. Do not spend a
+  turn per slide, and do not simulate parallelism by splitting the deck across turns.
+- **With subagents**, give each worker one frame or a small group. Send them the
+  step-2 fact table rows for their slide, the step-3 design kit, the outline, and any
+  `overlays.mandates` for their slide position. Send the **full** `contract` and
+  `charts` block only to a worker whose slide has a chart; for pure-markup frames the
+  distilled kit is enough, and shipping the whole contract to every worker costs more
+  than it protects.
+- **Reconcile before submitting**: same role → same px size everywhere, one accent
+  focal point per slide, consistent panels, no frame depending on another's classes.
+
+If you are working in a repo, write each frame to a file (`slides/01-title.html`, …)
+with parallel writes in one message, and open one at 1280×720 to eyeball it. Files
+make revisions cheap and give the user something to review.
+
+### 5. Write one frame per slide
 
 Each frame is the **inner HTML of one slide**. Ploxs wraps it in
 `<div id="frame-<n>" class="slide">` and centers it on the stage. Non-negotiables
@@ -146,8 +215,7 @@ Each frame is the **inner HTML of one slide**. Ploxs wraps it in
 - One top-level element per frame, no `id` attribute on it, no `<!DOCTYPE>`/`<html>`/
   `<head>`/`<body>`.
 - All CSS in one inline `<style>` inside the frame, scoped to classes that exist in
-  that frame's markup. No `#id` selectors — class names are auto-suffixed per frame,
-  so two frames can both use `.card` safely.
+  that frame's markup. No `#id` selectors.
 - No `<link>`, no `@import`, no `<script src>`, no Tailwind/Bootstrap/CDN utility
   classes. Nothing loads at render time.
 - Sizes in px chosen for 1280×720. No `vw`/`vh`/`dvh`, no `@media`, no viewport
@@ -166,12 +234,7 @@ Each frame is the **inner HTML of one slide**. Ploxs wraps it in
 - Charts: one inline `<script>` per frame, only for a Chart.js chart, and only
   following the protocol in **Charts** below. Never fabricate data.
 
-Practical workflow in a repo: write each frame to a file (`slides/01-title.html`,
-`slides/02-metrics.html`, …), open one in a browser sized to 1280×720 to eyeball it,
-then submit the files' contents in order. Keeping frames on disk makes revisions and
-re-submissions cheap, and gives the user something to review.
-
-### 4. Charts
+### 6. Charts
 
 A chart is the one place a frame runs JavaScript, and it has a **required protocol**.
 The reason: a `<canvas>` is opaque to the converter, so chart pixels only reach the deck
@@ -192,13 +255,22 @@ right:
 4. **`animation: false`** in options, plus `responsive: true` and
    `maintainAspectRatio: true`, or the capture catches the chart half-drawn.
 
-Then: real numbers from the slide's content only; palette colors (primary for the main
+Then: real numbers from the fact table only; palette colors (primary for the main
 series, secondary/accent for supporting, textMuted for grid lines, ticks and legend);
 14–16px chart fonts so it reads when projected; `aspectRatio` per chart type from
 `rules`; the chart as the frame's hero with a short heading above and at most one line
 of annotation below; and never restate the chart's numbers as body text beside it.
 
-`validate_html_frames` reports all of these — `canvas_missing_id`,
+`aspectRatio` in options is what actually governs the rendered shape. The canvas
+`width`/`height` attributes are a fallback for before Chart.js takes over — set them
+to the same ratio so nothing jumps, and size the holder with an explicit `max-width`
+that gives the chart 400–470px of vertical space. The holder must not set
+`overflow: hidden`.
+
+Label the x-axis honestly: a projected or guided period is a different kind of number
+from a reported one, and the axis tick is where that belongs (`2026 (guided)`).
+
+`validate_html_frames` reports the protocol failures — `canvas_missing_id`,
 `chart_loader_missing`, `chart_without_canvas` and `canvas_without_chart` are errors;
 `chart_ready_flag_missing` and `chart_animation_enabled` are warnings you should still
 fix. Treat any chart warning as a defect: the chart will not export as intended.
@@ -207,46 +279,84 @@ If a slide's data doesn't genuinely need a chart, express it as markup — a sta
 comparison table, a labelled bar built from divs — which converts to native, editable
 Google Slides shapes instead of a flat image.
 
-### 5. Validate before submitting
+### 7. Validate — and know what a warning is worth
 
 One `validate_html_frames` call with **all** the deck's frames — not one call per frame.
 It's free: no credits, no job.
 
 - `errors` block submission: fix them and re-validate once.
-- `warnings` are accepted but tell you the converter will strip or ignore something.
-  Fix them anyway unless you have a reason; a warning usually means the slide will
-  not look the way you intended.
+- `warnings` never block. `create_presentation_from_html` accepts the frames and
+  returns the same warning list.
 
-Fix every reported frame in one pass — the same mistake almost always repeats across
-frames written in parallel.
+**Validation earns its round trip on chart frames**, where the failures are silent and
+cost a whole job. For a deck of pure markup built from a kit you have already
+validated once, going straight to submit is reasonable — the create call reports the
+same warnings anyway.
 
-### 6. Submit
+**Read a warning against your own markup before acting on it.** Every warning now
+quotes the thing it matched — `id_selector` names the offending selector, for instance.
+If you cannot find that thing in your frame, the warning is not about your frame: note
+it and move on rather than spending a round trip rewriting on spec.
+
+(An earlier version of this server reported `id_selector` on frames that used no id
+selector at all — it was matching hex colours written after a space, like
+`border: 1px solid #D1D5DB`. That is fixed. If you meet a warning whose condition you
+genuinely cannot find, say so plainly instead of guessing at a workaround.)
+
+Fix every genuinely reported frame in one pass — the same mistake almost always
+repeats across frames written together.
+
+### 8. Submit
 
 `create_presentation_from_html` with:
 
 - `frames` — array of `{ name, html }` in slide order. Frame 1 becomes slide 1.
   `name` is a short slide title used in the deck outline.
-- `title` — deck title, also the Google Slides file name.
+- `title` — deck title, also the Google Slides file name. Pass plain text: write
+  `Retail & Cloud`, not `Retail &amp; Cloud`. (The server now decodes escaped entities
+  in the title and slide names, so a slip no longer leaks `&amp;` into the Drive file
+  name — but don't rely on it.)
 - the **same** `style_config_id` / `style_config` you passed to
   `get_html_frame_spec` (required — it drives deck fonts, background, and the
   Slides conversion).
 - optional `instructions` — intent/audience notes stored with the deck so later edits
-  stay consistent. It does not change the HTML you submitted.
+  stay consistent. It does not change the HTML you submitted. Good place for the
+  provenance of your fact table, so later edits inherit the same sourcing.
 - optional `export_to_google: false` to build the deck without the Drive upload.
 
 Then `wait_for_presentation` with the returned `job_id`, exactly as in mode A. The
 completed job returns `editUrl`, `viewUrl`, and a `deckRef` — a frame-authored deck is
-a normal Ploxs deck, so every editing tool below works on it.
+a normal Ploxs deck, so every editing tool below works on it in place. **Keep that
+`deckRef`: it is the only way to change this deck** (see step 9).
 
 Conversion runs the browser render + native PPTX path, so it is quick (~30–90s) and
 consumes no text-generation credits, but it does require Drive linked and a billable
 account.
 
-### 7. Revising
+### 9. Revising — frames build a deck, they never update one
 
-To change a slide you authored, prefer re-authoring the frame and resubmitting the
-deck (cheap, deterministic, and your files stay the source of truth). Use `edit_slide`
-on a frame-authored deck when the user explicitly wants Ploxs' AI to redesign a slide.
+**HTML conversion happens exactly once, at the initial export. Every change after that
+goes through the Ploxs editing tools on the deck's `deckRef`.**
+
+This is not a preference. `create_presentation_from_html` has no update mode: it queues
+a fresh job, which builds a fresh deck and a **new Google Slides file**. Resubmitting
+edited frames does not modify the deck the user already has — it leaves them with two
+decks in Drive and a link that no longer points at the current one.
+
+So once the deck exists:
+
+- Use `edit_slide` to rewrite or redesign a slide, `add_slides` to insert, and
+  `add_image_to_slide` / `add_infographic_to_slide` for assets; batch several with
+  `update_presentation`. These run the Ploxs AI harness against the live deck and edit
+  it in place, on the same file and the same link.
+- Fetch `get_presentation_outline` first so you target the right slide number.
+- Keep your frame files as the record of what you authored, but treat them as the
+  build input, not a live editing surface.
+
+Only submit frames again when the user genuinely wants a **new** deck — a fresh build
+from revised content, or a rebuild they've agreed to before the first one was shared. If
+they ask for a small correction and you are tempted to resubmit, say what would happen
+to their existing file first.
 
 ### HTTP alternative
 
