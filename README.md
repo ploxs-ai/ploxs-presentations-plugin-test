@@ -26,6 +26,25 @@ Two ways to build a deck, and the skill tells Claude when to use which:
 Both paths produce a normal Ploxs deck, so the editing tools — rewrite a slide, add
 slides, add generated images or infographics — work on either.
 
+### How the authored path behaves
+
+- **Your brand, not Claude's taste.** Claude asks the server for your style as concrete
+  tokens — stage size, the seven palette colors, the deck's type scale, your brand rules,
+  the fonts already loaded — and builds against those. It doesn't invent colors or fonts.
+- **The whole deck at once.** Slides are authored concurrently from one shared design
+  kit, which is how Ploxs' own slide painter works. Expect a deck in one pass, not a
+  slide per message.
+- **Charts are real Chart.js charts**, built only from numbers in your content and
+  captured into the deck during conversion. Claude checks them before submitting, because
+  a chart that breaks the conversion rules would otherwise arrive as an empty box.
+- **Built once, then edited in place.** Conversion happens at the initial export. After
+  the deck exists, changes go through Ploxs' editing tools on the same Google Slides
+  file — so your link stays valid and you don't collect duplicate decks in Drive.
+- **Facts before design.** The skill has Claude pin down every figure — value, period,
+  source, and whether it's reported, guided, or an estimate — before writing any slide,
+  and label anything that isn't a reported actual on the slide itself rather than
+  mentioning it in chat.
+
 ## Install
 
 In Claude Desktop or claude.ai:
@@ -63,7 +82,10 @@ credits, and decks are separate from production.
 | `.claude-plugin/marketplace.json` | Marketplace entry Claude reads when you add the repo |
 | `.claude-plugin/plugin.json` | Plugin manifest |
 | `.mcp.json` | MCP server (`https://test.ploxs.com/mcp`, Streamable HTTP + OAuth) |
-| `skills/ploxs-presentations-test/SKILL.md` | The skill: both deck modes, the HTML frame contract, error handling |
+| `skills/ploxs-presentations-test/SKILL.md` | The skill: both deck modes, the HTML frame contract, charts, error handling |
+
+Reinstall or update the marketplace entry to pick up skill changes — the skill ships in
+this repo, while the tools it drives live on the test server.
 
 This is a testing build; behaviour and tool names can change without notice. Issues and
 feedback: privacy@ploxs.com.
