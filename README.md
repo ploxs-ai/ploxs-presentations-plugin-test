@@ -110,3 +110,9 @@ feedback: privacy@ploxs.com.
 ## License
 
 MIT — see [LICENSE](./LICENSE).
+
+## Contributing
+
+This repository is generated. The plugin, its skill and these files live in the Ploxs
+monorepo and are published from there, so edits made directly here are overwritten on the
+next release. Please open an issue instead: privacy@ploxs.com.
