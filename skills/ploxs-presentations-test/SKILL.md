@@ -16,10 +16,17 @@ completion before a dependent step or before telling the user it's done.
 1. **`get_account_status`** — `google.driveConnected` must be true before creating or
    editing Google Slides. If it isn't, give the user the `links.googleDrive` /
    `links.settings` URL and wait. It also returns `billing` and `modelTiers`; on
-   insufficient credits, surface the message and stop rather than retrying.
+   insufficient credits, surface the message and stop rather than retrying. Read
+   `mcp.initialCreationMode` before choosing the initial creation path:
+   `conversion_only` overrides every other routing signal, so author the slides yourself
+   and use conversion without asking which path to take.
 2. **Pick a style** (see below).
 3. If the topic is genuinely unspecified, ask one short question and stop. Don't guess a
    topic and burn a deck job on it.
+
+Before beginning a creation or conversion, tell the user which path you are taking. Keep
+them oriented with short progress updates while you author frames and while a queued job
+is running.
 
 ## Styles
 
@@ -29,9 +36,12 @@ Exactly one style source per call — combining them errors (`style_choice_confl
   files (`upload`), and recent decks (`deck:` prefixed). Optional `query` (≤120 chars),
   `limit` (1–50), `include_deck_styles`. Each entry includes the full config JSON, so you
   can copy one, tweak it, and pass it inline.
-- **`style_config_id`** — preferred. Reuse the user's saved brand style whenever one
-  exists.
-- **`style_config`** — inline JSON for branding that isn't saved. Complete means: `style`
+- **`style_config_id`** — use when the user identifies a specific saved/uploaded/deck
+  style and the match is unambiguous. The existence of a saved style is not permission to
+  choose it.
+- **`style_config`** — the normal default when the user did not identify a saved style.
+  Build it from their request, brand context, audience and subject, then validate it.
+  Complete means: `style`
   (prose description), `colorPalette` with all 7 hex colors (primary, secondary, accent,
   background, surface, text, textMuted), and `typographyConfig` (headingFont, bodyFont,
   googleFontsImport). Put durable rules in `brandGuidelines` (colorUsage, typographyUsage,
@@ -40,35 +50,45 @@ Exactly one style source per call — combining them errors (`style_choice_confl
   top-level `instructions`.
 - **`validate_style_config`** — validates/normalizes a candidate before you spend a job on
   it. Optional `strict`.
-- **`auto_style: true`** — last resort, only when the user has no styles and gives no
-  direction. Say explicitly that Ploxs will invent the style. Never for authored frames.
+- **`auto_style: true`** — last resort, only when the user gives no direction and you
+  cannot construct a reasonable style config. The presence of unrelated library styles
+  does not change this. It must be explicit; omitting every style source returns
+  `style_config_required`. Say that Ploxs will invent the style. Never use it for authored
+  frames.
 
-A `deck:` style's name describes the deck it came from, **not its colors** — one listed as
-"The Amazon Flywheel" carried a pink palette. Read its `colorPalette` hexes before
-reusing it.
+A style's name is only a reference label. It may be a brand name, a deck title, or
+arbitrary text; it does **not** prove what colors or visual language the config contains.
+Always read the actual `colorPalette` hexes and the full config before considering it.
+Use a name match when the user mentions that name. If multiple styles match, ask which
+one. If the user requests something like "Amazon colors" but an Amazon-named saved style
+has a conflicting palette, show the mismatch and ask for confirmation before using it.
+Never silently substitute a name match for the user's stated visual direction.
 
 ## First work out which job this is
 
-Ploxs does two different things, and neither is an automatic default. Read the request and
-answer one question: **who is producing this deck's content and design — Ploxs, or you and
-the user?**
+Ploxs supports two initial creation paths. Route from what the user explicitly asks Ploxs
+and their AI assistant to do, not from how complete the supplied material is.
 
 | | |
 |---|---|
-| **Generation** — Ploxs produces the deck | `create_presentation` |
-| **Conversion** — the deck exists; Ploxs exports it | `create_presentation_from_html` |
+| **Generation** — Ploxs creates and designs the initial deck | `create_presentation` |
+| **Conversion** — you create the initial slides; Ploxs converts them | `create_presentation_from_html` |
 
-Points to **generation**: a subject with no drafted content behind it; raw material handed
-over to be turned into slides; the user wants Ploxs' design rather than yours.
+- **Account override:** if `mcp.initialCreationMode` is `conversion_only`, always use
+  conversion. Do not ask which path and do not call `create_presentation`. Existing-deck
+  edits still go through Ploxs.
+- Use **generation** when the user explicitly asks Ploxs to create, write, or design the
+  presentation. Notes, URLs, files, tables, drafted copy, or exact figures can all still
+  use generation when that is what the user asks Ploxs to do.
+- Use **conversion** when the user explicitly asks you/their AI assistant to create or
+  design the slides and asks Ploxs only to convert/export them to Google Slides, or when
+  they explicitly ask to use Ploxs for conversion.
 
-Points to **conversion**: the user asks you to write or design the slides or the HTML; the
-deck must reproduce material already in this conversation verbatim (analysis you ran, a
-file you read, a table or figures that must survive exactly); exact layouts were
-specified; the deck must be reproducible from files in a repo.
-
-If it's genuinely ambiguous, **ask one short question** before spending a job — don't guess
-in either direction, and never pick conversion just because you could design something or
-to avoid waiting for a job. Once you've decided, say which one you're doing in a line.
+If the request does not say who should create the initial slides, **ask one short
+question** before doing either: "Would you like Ploxs to create and design the
+presentation, or should I create the slides and use Ploxs only to convert them to Google
+Slides?" Do not infer the answer from raw material, complete content, repo files, exact
+layouts, or figures. Once decided, tell the user which path you are starting.
 
 ## Generation — Ploxs writes and designs the deck
 
@@ -79,22 +99,26 @@ to avoid waiting for a job. Once you've decided, say which one you're doing in a
 - `instructions` (≤4000) — tone, audience, emphasis
 - `slide_count` (1–60) — omit to let the content decide
 - one style source, as above
-- `export_to_google: false` — build the Ploxs deck only, skip the Drive upload
 - `idempotency_key` — optional; retries are already idempotent for ~10 minutes
+
+Every successful creation is uploaded to Google Drive; there is no local-only or
+Ploxs-only output option.
 
 Then **`wait_for_presentation`** with the `job_id` (`timeout_seconds` 5–420, default 420 —
 seven minutes, enough for a slow build in one call). If it returns `timedOut: true` the
 job is still running: wait again, don't assume failure. **`get_presentation_status`** gives
-the same job state as a one-shot check.
+the same job state as a one-shot check. Tell the user when the job is queued and give a
+brief update if another wait is needed.
 
-On completion: hand the user `editUrl` / `viewUrl` and **keep the `deckRef`** — every edit
-tool needs it. Daily creation caps apply (25/day wallet accounts, 100/day subscribers);
-`daily_job_limit` is retryable tomorrow, not now.
+On completion, **keep the `deckRef`** — every edit tool needs it. In the final response,
+make the destination unmistakable: label the edit and view links and put each full URL on
+its own line. Do not hide either URL behind a few linked words inside a sentence.
 
 ## Conversion — you author the slides as HTML frames
 
-Only when the deck already exists as your work, per the routing above. Frames convert
-exactly as authored — no regeneration, no restyling.
+Use this when the routing above selects conversion, including the account-level
+`conversion_only` override. Frames convert exactly as authored — no regeneration, no
+restyling.
 
 **Call `get_html_frame_spec` with your style, then start writing frames immediately.**
 
@@ -133,8 +157,9 @@ frame.
 
 **`create_presentation_from_html`** — `frames` (`{name, html}` in slide order), `title`
 (plain text, not HTML-escaped), the same style you gave the spec, optional `instructions`
-(stored for later edits) and `export_to_google: false`. Then `wait_for_presentation` exactly as
-for generation, and keep the `deckRef`.
+(stored for later edits). It always uploads the result to Google Drive. Then
+`wait_for_presentation` exactly as for generation, keep the `deckRef`, and present the
+final edit/view URLs clearly on their own labeled lines.
 
 ## Existing decks
 
@@ -151,10 +176,11 @@ for generation, and keep the `deckRef`.
 
 ## Editing a deck
 
-Conversion happens **once**, at the initial export. `create_presentation_from_html` cannot
-update a deck — calling it again builds a *second* deck and a second Drive file, leaving
-the user's link stale. Every later change goes through these tools on the `deckRef`, which
-run Ploxs' AI against the live file and edit it in place.
+Generation and conversion each happen **once**, for the initial deck.
+`create_presentation` and `create_presentation_from_html` cannot update a deck — calling
+either after a deck exists builds a *second* deck and a second Drive file, leaving the
+user's original link stale. Every later change goes through these tools on the `deckRef`,
+which run Ploxs' AI against the live file and edit it in place.
 
 Each takes `deck_ref` plus an optional `idempotency_key`:
 
@@ -194,13 +220,16 @@ Returned as text with `(code: …, retryable: …)`.
 - `style_config_required` — pass the style the frames were authored against
 - `style_choice_conflict` — you sent more than one style source
 - `invalid_style_config` — the message lists the missing fields; fix and revalidate
+- `conversion_only_preference` — the account requires agent-authored conversion; use the
+  HTML frame flow, not generation
 - `presentation_not_connected` — run `connect_presentation` first
 - `slide_not_found` — the message has the real slide count; re-fetch the outline
-- `active_job_limit` / `rate_limited` / `daily_job_limit` — wait for running work, then
-  retry
+- `active_job_limit` — wait for running work to finish, then retry
+- `rate_limited` — pause briefly, then retry
 - entitlement / credit errors — report to the user, don't retry
 - `html_frames_disabled`, or the frame tools are missing — this deployment doesn't have
-  the HTML frame surface; use `create_presentation` and say so
+  the HTML frame surface. If the account requires conversion-only, explain that the
+  requested mode is unavailable and stop; otherwise ask before falling back to generation
 
 Never invent a `deckRef` or a slide number — source them from `create_presentation`,
 `create_presentation_from_html`, `connect_presentation`, `list_presentations` and

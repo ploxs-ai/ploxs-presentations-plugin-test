@@ -9,7 +9,7 @@ Looking for the stable plugin? Use
 
 ## What it adds over the stable plugin
 
-Two ways to build a deck, and the skill tells Claude when to use which:
+Two ways to build a deck, selected by what you ask Claude and Ploxs to do:
 
 - **Ploxs generates the slides** — from notes, URLs, document text, or CSV data, in a
   saved brand style. Same as the stable plugin.
@@ -19,9 +19,13 @@ Two ways to build a deck, and the skill tells Claude when to use which:
   frames are converted exactly as authored and uploaded to your Google Drive as a
   Google Slides deck.
 
-  Use it when the design or content should come from Claude: precise layouts, content
-  already in its context (a codebase, a report, analysis it just ran), tables that must
-  survive intact, or a deck that should be reproducible from files in a repo.
+  Use it when you ask Claude to create/design the slides and use Ploxs only for
+  conversion. If you do not specify who should create the initial slides, Claude asks
+  before starting.
+
+You can also set the account to **conversion only** from the Ploxs MCP setup page. That
+preference overrides individual prompt ambiguity: Claude authors every initial deck,
+while later edits still go through Ploxs.
 
 Both paths produce a normal Ploxs deck, so the editing tools — rewrite a slide, add
 slides, add generated images or infographics — work on either.
@@ -37,9 +41,9 @@ slides, add generated images or infographics — work on either.
 - **Charts are real Chart.js charts**, built only from numbers in your material and
   captured into the deck during conversion. Claude checks chart frames before submitting,
   because a chart that breaks the conversion rules would otherwise arrive as an empty box.
-- **Built once, then edited in place.** Conversion happens at the initial export. After
-  the deck exists, changes go through Ploxs' editing tools on the same Google Slides
-  file — so your link stays valid and you don't collect duplicate decks in Drive.
+- **Built once, then edited in place.** Generation or conversion creates the initial
+  deck once. After it exists, changes go through Ploxs' editing tools on the same Google
+  Slides file — so your link stays valid and you don't collect duplicate decks in Drive.
 - **Figures stay honest on the slide.** Numbers come from the material you supplied, and
   anything projected, guided, estimated or dated is labelled on the slide itself
   (`2026 (guided)`, `as of 2021`) rather than mentioned in chat, where it wouldn't travel
