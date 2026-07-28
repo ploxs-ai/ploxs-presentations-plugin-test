@@ -123,9 +123,32 @@ restyling.
 **Call `get_html_frame_spec` with your style, then start writing frames immediately.**
 
 That one response is the whole brief: stage size and safe area, palette, fonts, type
-scale, the binding HTML contract, the Chart.js protocol with a copy-ready widget, and any
-overlay exclusion zones. Follow it literally; don't re-derive tokens or invent colors,
-fonts and sizes.
+scale, HTML-first creative direction, the binding export contract, the Chart.js protocol
+with a copy-ready widget, and any overlay exclusion zones. Follow it literally; don't
+re-derive tokens or invent colors, fonts and sizes.
+
+Create **real HTML/CSS compositions, not conventional slide templates.** Treat each fixed
+1280×720 frame as a polished static web canvas. When the content and style support it,
+design landing-page heroes, product or dashboard surfaces, editorial spreads, command
+centres, metric walls, bento/data grids, timelines, comparison interfaces, and layered
+information systems. Use semantic nesting, CSS Grid/Flexbox, borders, radii, shadows,
+gradients, pseudo-elements, real images, icon placeholders, and charts within the returned
+contract.
+
+Treat the **entire resolved style config as a binding design system**: palette roles,
+typography, type scale, alignment, spacing rhythm, density, border/radius/shadow language,
+personality, brand rules, imagery, iconography, charts, and decorative grammar. Commit to
+the strongest coherent interpretation it supports. A palette-and-font swap over repeated
+generic cards is not style implementation. Do not dilute a distinctive direction into
+safe corporate slides. Fidelity can also be deliberately quiet—minimal and luxury styles
+should commit through typography, scale, whitespace, and precision rather than arbitrary
+decoration.
+
+Keep the design system consistent while varying the composition and focal structure to
+fit each slide's message. Use the safe canvas intentionally: strong negative space may be
+part of the art direction, but tiny centred content and accidental underfilling are not.
+Use UI as a static visual language, never as fake interaction; do not add controls, empty
+media placeholders, or unsupported behaviours.
 
 Write **every frame in one pass, back-to-back in a single turn.** No outline document, no
 design memo, no turn-per-slide. Each frame is the inner HTML of one slide; frame 1 becomes
@@ -135,9 +158,11 @@ contract and `charts` block only to a worker whose slide has a chart.
 Hold these constant as you write:
 
 - sizes copied from `briefs.layout`, not a fresh scale per slide
-- one small class vocabulary reused in every frame (`.wrap`, `.lede`, `.card`, `.stat`,
-  `.note`, `.icon`). Class names auto-suffix per frame so they cannot collide; per-frame
-  prefixes like `.f1-card` only bloat the CSS
+- the deck-wide visual language derived from `creativeDirection` and every returned brief
+- a small semantic class vocabulary (`.stage`, `.eyebrow`, `.panel`, `.metric`, `.rail`,
+  `.note`, `.icon`) without forcing every slide into the same structure. Class names
+  auto-suffix per frame so they cannot collide; per-frame prefixes like `.f1-panel` only
+  bloat the CSS
 - **no `font-family` anywhere** — the deck already applies the heading font to `h1`–`h6`
   and the body font to everything else
 - numbers only from the material you were given. Anything projected, guided, estimated or
