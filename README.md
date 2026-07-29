@@ -1,19 +1,19 @@
 # Ploxs Presentations — Test Plugin
 
-Pre-release build of the Ploxs presentation plugin for Claude. It connects to the
+Isolated test build of the Ploxs presentation plugin for Claude. It connects to the
 isolated Ploxs **test** server at `https://test.ploxs.com/mcp` and never touches
 production `ploxs.com`.
 
 Looking for the stable plugin? Use
 [ploxs-presentations-plugin](https://github.com/vipinsanthosh/ploxs-presentations-plugin).
 
-## What it adds over the stable plugin
+## What it provides
 
 Two ways to build a deck, selected by what you ask Claude and Ploxs to do:
 
 - **Ploxs generates the slides** — from notes, URLs, document text, or CSV data, in a
-  saved brand style. Same as the stable plugin.
-- **Claude authors the slides** *(new)* — Claude reads your Ploxs style config as
+  saved brand style.
+- **Claude authors the slides** — Claude reads your Ploxs style config as
   concrete design tokens (stage geometry, palette, type scale, brand rules), writes the
   slide HTML itself, checks it against the conversion contract, and submits it. The
   frames are converted exactly as authored and uploaded to your Google Drive as a
