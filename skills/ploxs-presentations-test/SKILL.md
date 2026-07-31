@@ -125,7 +125,10 @@ slide planning, slide HTML, and polish. The same words in `instructions` are tre
 soft deck-wide preference and get diluted.
 
 Briefs are HTML comments, so they never render. Ploxs strips them from the content before
-anything is generated.
+anything is generated. **`validate_slide_briefs` checks a payload for free** — no job, no
+credits — and returns what Ploxs parsed for every slide. Use it the first time you write
+briefs, or any time a result says `buildMode: standard` when you expected `agent_direct`.
+Never spend a second deck job guessing at the syntax.
 
 ```markdown
 <!-- PLOX-BRIEF:DECK
@@ -152,6 +155,12 @@ chart: horizontal bar of the five regions
 avoid: full-width hero heading
 -->
 ```
+
+The header is forgiving: `PLOX-BRIEF:SLIDE`, `PLOX_BRIEF_SLIDE`, `PLOX-BRIEF-SLIDE`,
+`PLOX-BRIEF:SLIDE_3`, `PLOX-SLIDE-BRIEF` and a bare `PLOX-BRIEF` all parse, in an HTML
+comment or a ```` ```plox-brief:slide ```` fenced block. What matters is that the fields are
+`key: value` lines inside the block. If a header can't be read, the tool result quotes the
+block back to you rather than saying "not found".
 
 - **Deck block**, once at the top: `design_language`, `deck_shape`, `density`, `avoid`,
   `notes`. It applies to every slide.
@@ -195,7 +204,8 @@ All four conditions must hold:
 `create_presentation` reports the decision immediately in its result: `buildMode` is
 `agent_direct` or `standard`, and `buildModeReason` names exactly what to change if you
 wanted the fast path and missed it. Check it on the first call — a missing brief on one
-slide silently costs the whole deck the fast path.
+slide silently costs the whole deck the fast path. To confirm before spending anything, run
+`validate_slide_briefs` on the same markdown: it reports the same verdict, per slide, free.
 
 Because the first render is final here, make each brief specific: name the structure, the
 focal element, and the component set. Vague briefs get vague slides with no polish pass to
