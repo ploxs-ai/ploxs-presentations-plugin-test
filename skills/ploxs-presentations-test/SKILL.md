@@ -40,12 +40,16 @@ Exactly one style source per call — combining them errors (`style_choice_confl
   style and the match is unambiguous. The existence of a saved style is not permission to
   choose it.
 - **`style_config`** — the normal default when the user did not identify a saved style.
-  You write it. See **Writing the style config** below; it is the highest-leverage thing
-  you produce on the generation path.
-- **`validate_style_config`** — free, no job, no credits. It returns the config exactly as
-  Ploxs resolved it, so it doubles as a receipt: anything you sent that was dropped,
-  clipped, or replaced by a fallback shows up in the result. Run it before spending a deck
-  job, and read what comes back rather than assuming your JSON arrived intact.
+  Build it from their request, brand context, audience and subject, then validate it.
+  Complete means: `style`
+  (prose description), `colorPalette` with all 7 hex colors (primary, secondary, accent,
+  background, surface, text, textMuted), and `typographyConfig` (headingFont, bodyFont,
+  googleFontsImport). Put durable rules in `brandGuidelines` (colorUsage, typographyUsage,
+  layoutUsage, imageryUsage, chartUsage, dos, donts) and personality in
+  `customStyleDirective` — those persist into later edits and generated images, unlike
+  top-level `instructions`.
+- **`validate_style_config`** — validates/normalizes a candidate before you spend a job on
+  it. Optional `strict`.
 - **`auto_style: true`** — last resort, only when the user gives no direction and you
   cannot construct a reasonable style config. The presence of unrelated library styles
   does not change this. It must be explicit; omitting every style source returns
@@ -59,68 +63,6 @@ Use a name match when the user mentions that name. If multiple styles match, ask
 one. If the user requests something like "Amazon colors" but an Amazon-named saved style
 has a conflicting palette, show the mismatch and ask for confirmation before using it.
 Never silently substitute a name match for the user's stated visual direction.
-
-## Writing the style config
-
-On the generation path Ploxs writes the copy and builds every slide — but it designs
-against your style config. Palette roles, type pairing, structural rules and personality
-are the design system that each slide, later edit, generated image and chart inherits.
-This is where your design judgement actually lands, and it costs a few hundred tokens
-once. A thin config returns a competent generic deck; a considered one returns a deck that
-looks authored. Do this thinking properly even when the user's request was one line.
-
-**Commit to one concept, then derive every field from it.** Before writing any JSON,
-settle on a single specific visual idea drawn from the subject, the audience, and the era
-or domain the material belongs to. Anchor it to something a designer could go and look
-up — a period, a discipline, a publication format, a material, a class of instrument or
-software. "Clean and modern", "professional", and "corporate" are not concepts; they are
-the absence of one, and they produce exactly the deck the user would get with no config at
-all. Then write every field as an answer to that one idea instead of as an independent
-preference. That derivation is what reads as designed — not the individual choices.
-
-Required (`strict` rejects the config without them):
-
-- **`style`** — the concept in prose, up to ~1200 characters and worth 3–5 real sentences:
-  the reference, what dominates the ground, how structure is expressed, how type behaves.
-  This is injected into every slide build, so it is the single field that does the most
-  work. Write it like direction to a designer, not a keyword list.
-- **`colorPalette`** — all seven roles as exact hex values you chose: `primary`,
-  `secondary`, `accent`, `background`, `surface`, `text`, `textMuted`. Never name a colour
-  in words and leave Ploxs to resolve it. Add `name` so the palette reaches the slide
-  builder with its identity, and keep the roles honest — `accent` should be the colour
-  that earns emphasis, not a fourth neutral.
-- **`typographyConfig`** — `headingFont`, `bodyFont`, and a real `googleFontsImport` URL
-  for exactly those families with the weights you intend to use. A pairing you can
-  justify beats a safe one.
-
-Optional, and where a good config separates from a passable one. Every named slot you
-leave empty is a decision handed back to Ploxs:
-
-- **`brandGuidelines`** — the enforceable rules behind the prose. `colorUsage` and
-  `layoutUsage` (≤1200 each), `typographyUsage`, `imageryUsage`, `chartUsage` (≤900 each),
-  plus `dos` and `donts` (up to 12 lines each, ≤220 chars). Fill `imageryUsage` and
-  `chartUsage` even when you are not asking for a picture or a chart — they decide what
-  happens if one is ever added. Make `donts` do real work: forbid the specific generic
-  default that would otherwise show up, in the terms it would show up in.
-- **`layoutConfig`** — deck-wide structure, as validated values rather than prose, applied
-  to every slide. Send only the keys you want to change; everything omitted keeps Ploxs'
-  default. `enabledArchetypes` is the strongest single move here — narrowing the vocabulary
-  (from `title`, `content`, `two-column`, `media-left`, `media-right`, `chart-hero`,
-  `quote`, `code`, `dense-two-column`) commits the deck to a shape. Also `marginX`
-  (32–128) and `marginY` (32–112) for density, `defaultAlign` and `centerAllowedFor` for
-  the alignment policy, and `typeScale` (`title`, `subtitle`, `body`, `caption`, `stat`,
-  `code`) in px against the fixed 1280×720 stage. A large `stat` is how you make one figure
-  per slide carry the weight.
-- **`iconPacks`** — up to 8 lowercase Iconify prefixes in priority order, restricting every
-  slide icon. Icon language is part of a visual concept; omit it only when you have no view.
-- **`customStyleDirective`** — freeform, and the one field with no length limit. A
-  `personality` line stating how the deck should feel travels into later edits and
-  generated images, where the prose `style` alone does not.
-
-Two checks before you send it. Would this config be *wrong* for a different subject? If it
-would suit any deck equally well, it is too generic to be worth sending. And could someone
-who never saw the request name the concept from the config alone? If not, the fields are
-not yet derived from one idea.
 
 ## First work out which job this is
 
