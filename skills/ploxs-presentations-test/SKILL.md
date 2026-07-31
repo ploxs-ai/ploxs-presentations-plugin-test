@@ -94,8 +94,9 @@ layouts, or figures. Once decided, tell the user which path you are starting.
 
 **`create_presentation`**:
 
-- `markdown` — notes or outline text; `urls` (≤10) — pages to extract;
-  `file_texts` (≤20) — pasted document text; `csv_sources` (≤20) — tabular data
+- `markdown` — notes or outline text, and the place to put your own layout direction
+  (see below); `urls` (≤10) — pages to extract; `file_texts` (≤20) — pasted document text;
+  `csv_sources` (≤20) — tabular data
 - `instructions` (≤4000) — tone, audience, emphasis
 - `slide_count` (1–60) — omit to let the content decide
 - one style source, as above
@@ -113,6 +114,93 @@ brief update if another wait is needed.
 On completion, **keep the `deckRef`** — every edit tool needs it. In the final response,
 make the destination unmistakable: label the edit and view links and put each full URL on
 its own line. Do not hide either URL behind a few linked words inside a sentence.
+
+## Passing your own layout vision into generation
+
+Generation does not mean handing over content and hoping. If you have a view on how the
+slides should be composed — and after reading the material you usually do — send it as a
+**design brief** embedded in the markdown. Ploxs recognises these as coming from a
+collaborating AI assistant and weights them at every stage of the build: slide splitting,
+slide planning, slide HTML, and polish. The same words in `instructions` are treated as a
+soft deck-wide preference and get diluted.
+
+Briefs are HTML comments, so they never render. Ploxs strips them from the content before
+anything is generated.
+
+```markdown
+<!-- PLOX-BRIEF:DECK
+design_language: dense telemetry dashboard, hairline rules, mono numerals
+deck_shape: title, three metric slides, adoption timeline, close
+density: tight
+avoid: rounded card grids, centred hero text
+-->
+
+# Q3 platform review
+
+---
+
+## Regional adoption
+
+Adoption reached 3.4× baseline across five regions.
+
+<!-- PLOX-BRIEF:SLIDE
+type: infographic
+layout: 60/40 split, narrative left, metric rail right
+focal: the 3.4× figure at 5-6× body size
+components: three stacked metric cards separated by hairline rules
+chart: horizontal bar of the five regions
+avoid: full-width hero heading
+-->
+```
+
+- **Deck block**, once at the top: `design_language`, `deck_shape`, `density`, `avoid`,
+  `notes`. It applies to every slide.
+- **Slide block**, inside the slide it describes: `type`, `layout`, `focal`, `components`,
+  `chart`, `avoid`, `notes`. One line per key, ≤320 chars each. Unrecognised keys are
+  passed through rather than dropped, so a well-named custom key still lands.
+- `type` accepts `title`, `content`, `code`, `image`, `split`, `infographic` and overrides
+  Ploxs' own archetype inference for that slide.
+- **Split the markdown into explicit slides** (`---` separators or `##` headings) and put
+  one brief inside each. With briefs plus explicit boundaries, Ploxs keeps your exact
+  slide split instead of re-splitting the content. Without boundaries it may re-split, and
+  a brief then applies to whichever slide it lands in.
+- A brief directs **structure, emphasis and composition only**. It never adds facts,
+  numbers, copy, charts, or images — everything factual must already be in the content.
+- Briefs cannot override the fixed 1280×720 stage fit, the export contract, or the style
+  config's palette and typography. Palette, fonts and durable brand rules belong in
+  `style_config` / `brandGuidelines`; briefs are for per-slide composition. Both are read.
+- The same format works in `add_slides` `content`, so inserted slides carry the same
+  intent as the original deck.
+
+Don't bother with briefs on the conversion path — there you author the HTML yourself, so
+the composition is already yours.
+
+### Single-pass direct build — the fast path
+
+A fully briefed payload has already done the planning, so Ploxs stops paying for it. Every
+planning stage is dropped: no content re-splitting, no deck classifier, no per-slide layout
+planner, no layout refinement, no polish pass. One slide-building agent renders each slide
+in **one** call, all slides still in parallel, so a deck comes back in roughly the time a
+single slide takes — about four times fewer model calls than the standard pipeline.
+
+All four conditions must hold:
+
+1. Every slide is explicitly separated (`---` separators or `##` headings).
+2. Every **content** slide carries a brief with at least one of `layout`, `components`,
+   `focal`, `chart`, `type`. A `notes`-only brief doesn't qualify. A title slide needs none.
+3. `markdown` is the only content source — no `urls`, `file_texts`, `csv_sources`, or
+   images, and it isn't a Ploxs CSV-analysis block.
+4. If you pass `slide_count`, it equals the number of slides you authored.
+
+`create_presentation` reports the decision immediately in its result: `buildMode` is
+`agent_direct` or `standard`, and `buildModeReason` names exactly what to change if you
+wanted the fast path and missed it. Check it on the first call — a missing brief on one
+slide silently costs the whole deck the fast path.
+
+Because the first render is final here, make each brief specific: name the structure, the
+focal element, and the component set. Vague briefs get vague slides with no polish pass to
+rescue them. Data slides still get a validated Chart.js widget, and a brief with `layout` or
+`components` keeps its composition instead of the default chart-only layout.
 
 ## Conversion — you author the slides as HTML frames
 
@@ -211,9 +299,10 @@ Each takes `deck_ref` plus an optional `idempotency_key`:
 
 - **`edit_slide`** — `slide_number`, `prompt` (≤4000). Optional `layout_archetype`
   (≤120); `use_slide_context` defaults true.
-- **`add_slides`** — `content` (≤30000). Optional `slide_count` (1–20),
-  `insertion_placement` (`before` / `after` / `end`, default `end`; `before`/`after`
-  require `anchor_slide_number`), `instructions` (≤4000).
+- **`add_slides`** — `content` (≤30000), which accepts the same `PLOX-BRIEF` design briefs
+  as generation. Optional `slide_count` (1–20), `insertion_placement` (`before` / `after` /
+  `end`, default `end`; `before`/`after` require `anchor_slide_number`),
+  `instructions` (≤4000).
 - **`add_image_to_slide`** — `slide_number`. Optional `prompt` (≤2000), `art_style`
   (≤240), `image_type` (≤120), `aspect_ratio` (`16:9|4:3|1:1|9:16|3:4`), `placement`
   (≤120). Give a `prompt` or leave `use_slide_context` on.
