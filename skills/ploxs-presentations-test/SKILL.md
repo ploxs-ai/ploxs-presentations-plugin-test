@@ -94,11 +94,13 @@ layouts, or figures. Once decided, tell the user which path you are starting.
 
 **`create_presentation`**:
 
-- `markdown` — notes or outline text, and the place to put your own layout direction
-  (see below); `urls` (≤10) — pages to extract; `file_texts` (≤20) — pasted document text;
+- `markdown` — the deck content. When you write it yourself, author explicit slides with a
+  design brief in each: that is the default shape, not a topic summary (see below);
+  `urls` (≤10) — pages to extract; `file_texts` (≤20) — pasted document text;
   `csv_sources` (≤20) — tabular data
 - `instructions` (≤4000) — tone, audience, emphasis
-- `slide_count` (1–60) — omit to let the content decide
+- `slide_count` (1–60) — omit it when you authored the slides yourself; a count that doesn't
+  match the slides in `markdown` costs the deck the fast path
 - one style source, as above
 - `idempotency_key` — optional; retries are already idempotent for ~10 minutes
 
@@ -115,14 +117,21 @@ On completion, **keep the `deckRef`** — every edit tool needs it. In the final
 make the destination unmistakable: label the edit and view links and put each full URL on
 its own line. Do not hide either URL behind a few linked words inside a sentence.
 
-## Passing your own layout vision into generation
+## Authoring the generation payload — slides plus design briefs
 
-Generation does not mean handing over content and hoping. If you have a view on how the
-slides should be composed — and after reading the material you usually do — send it as a
-**design brief** embedded in the markdown. Ploxs recognises these as coming from a
+Generation does not mean handing over content and hoping. When the markdown is your own
+writing, **this is the default payload shape, not an enhancement**: split it into explicit
+slides and give each content slide a **design brief**. You have read the material, so you
+do have a view on how each slide should be composed — put it in a brief rather than leaving
+it in chat or burying it in `instructions`. Ploxs recognises these as coming from a
 collaborating AI assistant and weights them at every stage of the build: slide splitting,
 slide planning, slide HTML, and polish. The same words in `instructions` are treated as a
 soft deck-wide preference and get diluted.
+
+Sending a topic summary plus `slide_count` is the fallback, not the norm. Reach for it only
+when the content isn't yours to split — `urls`, `file_texts`, `csv_sources`, images — or the
+user explicitly wants Ploxs to decide the deck's shape. That payload always runs the slower
+standard pipeline.
 
 Briefs are HTML comments, so they never render. Ploxs strips them from the content before
 anything is generated. **`validate_slide_briefs` checks a payload for free** — no job, no
