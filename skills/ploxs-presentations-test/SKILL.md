@@ -40,12 +40,16 @@ Exactly one style source per call — combining them errors (`style_choice_confl
   style and the match is unambiguous. The existence of a saved style is not permission to
   choose it.
 - **`style_config`** — the normal default when the user did not identify a saved style.
-  You write it. See **Writing the style config** below; it is the highest-leverage thing
-  you produce on the generation path.
-- **`validate_style_config`** — free, no job, no credits. It returns the config exactly as
-  Ploxs resolved it, so it doubles as a receipt: anything you sent that was dropped,
-  clipped, or replaced by a fallback shows up in the result. Run it before spending a deck
-  job, and read what comes back rather than assuming your JSON arrived intact.
+  Build it from their request, brand context, audience and subject, then validate it.
+  Complete means: `style`
+  (prose description), `colorPalette` with all 7 hex colors (primary, secondary, accent,
+  background, surface, text, textMuted), and `typographyConfig` (headingFont, bodyFont,
+  googleFontsImport). Put durable rules in `brandGuidelines` (colorUsage, typographyUsage,
+  layoutUsage, imageryUsage, chartUsage, dos, donts) and personality in
+  `customStyleDirective` — those persist into later edits and generated images, unlike
+  top-level `instructions`.
+- **`validate_style_config`** — validates/normalizes a candidate before you spend a job on
+  it. Optional `strict`.
 - **`auto_style: true`** — last resort, only when the user gives no direction and you
   cannot construct a reasonable style config. The presence of unrelated library styles
   does not change this. It must be explicit; omitting every style source returns
@@ -59,68 +63,6 @@ Use a name match when the user mentions that name. If multiple styles match, ask
 one. If the user requests something like "Amazon colors" but an Amazon-named saved style
 has a conflicting palette, show the mismatch and ask for confirmation before using it.
 Never silently substitute a name match for the user's stated visual direction.
-
-## Writing the style config
-
-On the generation path Ploxs writes the copy and builds every slide — but it designs
-against your style config. Palette roles, type pairing, structural rules and personality
-are the design system that each slide, later edit, generated image and chart inherits.
-This is where your design judgement actually lands, and it costs a few hundred tokens
-once. A thin config returns a competent generic deck; a considered one returns a deck that
-looks authored. Do this thinking properly even when the user's request was one line.
-
-**Commit to one concept, then derive every field from it.** Before writing any JSON,
-settle on a single specific visual idea drawn from the subject, the audience, and the era
-or domain the material belongs to. Anchor it to something a designer could go and look
-up — a period, a discipline, a publication format, a material, a class of instrument or
-software. "Clean and modern", "professional", and "corporate" are not concepts; they are
-the absence of one, and they produce exactly the deck the user would get with no config at
-all. Then write every field as an answer to that one idea instead of as an independent
-preference. That derivation is what reads as designed — not the individual choices.
-
-Required (`strict` rejects the config without them):
-
-- **`style`** — the concept in prose, up to ~1200 characters and worth 3–5 real sentences:
-  the reference, what dominates the ground, how structure is expressed, how type behaves.
-  This is injected into every slide build, so it is the single field that does the most
-  work. Write it like direction to a designer, not a keyword list.
-- **`colorPalette`** — all seven roles as exact hex values you chose: `primary`,
-  `secondary`, `accent`, `background`, `surface`, `text`, `textMuted`. Never name a colour
-  in words and leave Ploxs to resolve it. Add `name` so the palette reaches the slide
-  builder with its identity, and keep the roles honest — `accent` should be the colour
-  that earns emphasis, not a fourth neutral.
-- **`typographyConfig`** — `headingFont`, `bodyFont`, and a real `googleFontsImport` URL
-  for exactly those families with the weights you intend to use. A pairing you can
-  justify beats a safe one.
-
-Optional, and where a good config separates from a passable one. Every named slot you
-leave empty is a decision handed back to Ploxs:
-
-- **`brandGuidelines`** — the enforceable rules behind the prose. `colorUsage` and
-  `layoutUsage` (≤1200 each), `typographyUsage`, `imageryUsage`, `chartUsage` (≤900 each),
-  plus `dos` and `donts` (up to 12 lines each, ≤220 chars). Fill `imageryUsage` and
-  `chartUsage` even when you are not asking for a picture or a chart — they decide what
-  happens if one is ever added. Make `donts` do real work: forbid the specific generic
-  default that would otherwise show up, in the terms it would show up in.
-- **`layoutConfig`** — deck-wide structure, as validated values rather than prose, applied
-  to every slide. Send only the keys you want to change; everything omitted keeps Ploxs'
-  default. `enabledArchetypes` is the strongest single move here — narrowing the vocabulary
-  (from `title`, `content`, `two-column`, `media-left`, `media-right`, `chart-hero`,
-  `quote`, `code`, `dense-two-column`) commits the deck to a shape. Also `marginX`
-  (32–128) and `marginY` (32–112) for density, `defaultAlign` and `centerAllowedFor` for
-  the alignment policy, and `typeScale` (`title`, `subtitle`, `body`, `caption`, `stat`,
-  `code`) in px against the fixed 1280×720 stage. A large `stat` is how you make one figure
-  per slide carry the weight.
-- **`iconPacks`** — up to 8 lowercase Iconify prefixes in priority order, restricting every
-  slide icon. Icon language is part of a visual concept; omit it only when you have no view.
-- **`customStyleDirective`** — freeform, and the one field with no length limit. A
-  `personality` line stating how the deck should feel travels into later edits and
-  generated images, where the prose `style` alone does not.
-
-Two checks before you send it. Would this config be *wrong* for a different subject? If it
-would suit any deck equally well, it is too generic to be worth sending. And could someone
-who never saw the request name the concept from the config alone? If not, the fields are
-not yet derived from one idea.
 
 ## First work out which job this is
 
@@ -152,8 +94,9 @@ layouts, or figures. Once decided, tell the user which path you are starting.
 
 **`create_presentation`**:
 
-- `markdown` — notes or outline text; `urls` (≤10) — pages to extract;
-  `file_texts` (≤20) — pasted document text; `csv_sources` (≤20) — tabular data
+- `markdown` — notes or outline text, and the place to put your own layout direction
+  (see below); `urls` (≤10) — pages to extract; `file_texts` (≤20) — pasted document text;
+  `csv_sources` (≤20) — tabular data
 - `instructions` (≤4000) — tone, audience, emphasis
 - `slide_count` (1–60) — omit to let the content decide
 - one style source, as above
@@ -171,6 +114,103 @@ brief update if another wait is needed.
 On completion, **keep the `deckRef`** — every edit tool needs it. In the final response,
 make the destination unmistakable: label the edit and view links and put each full URL on
 its own line. Do not hide either URL behind a few linked words inside a sentence.
+
+## Passing your own layout vision into generation
+
+Generation does not mean handing over content and hoping. If you have a view on how the
+slides should be composed — and after reading the material you usually do — send it as a
+**design brief** embedded in the markdown. Ploxs recognises these as coming from a
+collaborating AI assistant and weights them at every stage of the build: slide splitting,
+slide planning, slide HTML, and polish. The same words in `instructions` are treated as a
+soft deck-wide preference and get diluted.
+
+Briefs are HTML comments, so they never render. Ploxs strips them from the content before
+anything is generated. **`validate_slide_briefs` checks a payload for free** — no job, no
+credits — and returns what Ploxs parsed for every slide. Use it the first time you write
+briefs, or any time a result says `buildMode: standard` when you expected `agent_direct`.
+Never spend a second deck job guessing at the syntax.
+
+```markdown
+<!-- PLOX-BRIEF:DECK
+design_language: dense telemetry dashboard, hairline rules, mono numerals
+deck_shape: title, three metric slides, adoption timeline, close
+density: tight
+avoid: rounded card grids, centred hero text
+-->
+
+# Q3 platform review
+
+---
+
+## Regional adoption
+
+Adoption reached 3.4× baseline across five regions.
+
+<!-- PLOX-BRIEF:SLIDE
+type: infographic
+layout: 60/40 split, narrative left, metric rail right
+focal: the 3.4× figure at 5-6× body size
+components: three stacked metric cards separated by hairline rules
+chart: horizontal bar of the five regions
+avoid: full-width hero heading
+-->
+```
+
+The header is forgiving: `PLOX-BRIEF:SLIDE`, `PLOX_BRIEF_SLIDE`, `PLOX-BRIEF-SLIDE`,
+`PLOX-BRIEF:SLIDE_3`, `PLOX-SLIDE-BRIEF` and a bare `PLOX-BRIEF` all parse, in an HTML
+comment or a ```` ```plox-brief:slide ```` fenced block. What matters is that the fields are
+`key: value` lines inside the block. If a header can't be read, the tool result quotes the
+block back to you rather than saying "not found".
+
+- **Deck block**, once at the top: `design_language`, `deck_shape`, `density`, `avoid`,
+  `notes`. It applies to every slide.
+- **Slide block**, inside the slide it describes: `type`, `layout`, `focal`, `components`,
+  `chart`, `avoid`, `notes`. One line per key, ≤320 chars each. Unrecognised keys are
+  passed through rather than dropped, so a well-named custom key still lands.
+- `type` accepts `title`, `content`, `code`, `image`, `split`, `infographic` and overrides
+  Ploxs' own archetype inference for that slide.
+- **Split the markdown into explicit slides** (`---` separators or `##` headings) and put
+  one brief inside each. With briefs plus explicit boundaries, Ploxs keeps your exact
+  slide split instead of re-splitting the content. Without boundaries it may re-split, and
+  a brief then applies to whichever slide it lands in.
+- A brief directs **structure, emphasis and composition only**. It never adds facts,
+  numbers, copy, charts, or images — everything factual must already be in the content.
+- Briefs cannot override the fixed 1280×720 stage fit, the export contract, or the style
+  config's palette and typography. Palette, fonts and durable brand rules belong in
+  `style_config` / `brandGuidelines`; briefs are for per-slide composition. Both are read.
+- The same format works in `add_slides` `content`, so inserted slides carry the same
+  intent as the original deck.
+
+Don't bother with briefs on the conversion path — there you author the HTML yourself, so
+the composition is already yours.
+
+### Single-pass direct build — the fast path
+
+A fully briefed payload has already done the planning, so Ploxs stops paying for it. Every
+planning stage is dropped: no content re-splitting, no deck classifier, no per-slide layout
+planner, no layout refinement, no polish pass. One slide-building agent renders each slide
+in **one** call, all slides still in parallel, so a deck comes back in roughly the time a
+single slide takes — about four times fewer model calls than the standard pipeline.
+
+All four conditions must hold:
+
+1. Every slide is explicitly separated (`---` separators or `##` headings).
+2. Every **content** slide carries a brief with at least one of `layout`, `components`,
+   `focal`, `chart`, `type`. A `notes`-only brief doesn't qualify. A title slide needs none.
+3. `markdown` is the only content source — no `urls`, `file_texts`, `csv_sources`, or
+   images, and it isn't a Ploxs CSV-analysis block.
+4. If you pass `slide_count`, it equals the number of slides you authored.
+
+`create_presentation` reports the decision immediately in its result: `buildMode` is
+`agent_direct` or `standard`, and `buildModeReason` names exactly what to change if you
+wanted the fast path and missed it. Check it on the first call — a missing brief on one
+slide silently costs the whole deck the fast path. To confirm before spending anything, run
+`validate_slide_briefs` on the same markdown: it reports the same verdict, per slide, free.
+
+Because the first render is final here, make each brief specific: name the structure, the
+focal element, and the component set. Vague briefs get vague slides with no polish pass to
+rescue them. Data slides still get a validated Chart.js widget, and a brief with `layout` or
+`components` keeps its composition instead of the default chart-only layout.
 
 ## Conversion — you author the slides as HTML frames
 
@@ -269,9 +309,10 @@ Each takes `deck_ref` plus an optional `idempotency_key`:
 
 - **`edit_slide`** — `slide_number`, `prompt` (≤4000). Optional `layout_archetype`
   (≤120); `use_slide_context` defaults true.
-- **`add_slides`** — `content` (≤30000). Optional `slide_count` (1–20),
-  `insertion_placement` (`before` / `after` / `end`, default `end`; `before`/`after`
-  require `anchor_slide_number`), `instructions` (≤4000).
+- **`add_slides`** — `content` (≤30000), which accepts the same `PLOX-BRIEF` design briefs
+  as generation. Optional `slide_count` (1–20), `insertion_placement` (`before` / `after` /
+  `end`, default `end`; `before`/`after` require `anchor_slide_number`),
+  `instructions` (≤4000).
 - **`add_image_to_slide`** — `slide_number`. Optional `prompt` (≤2000), `art_style`
   (≤240), `image_type` (≤120), `aspect_ratio` (`16:9|4:3|1:1|9:16|3:4`), `placement`
   (≤120). Give a `prompt` or leave `use_slide_context` on.
