@@ -229,11 +229,12 @@ Each takes `deck_ref` plus an optional `idempotency_key`:
   **`get_presentation_edit_status`** for a one-shot check. Poll before a dependent edit;
   at most 3 edit tasks active per key.
 
-**Adding vs. replacing:** the two asset tools **add** by default and keep whatever is
-already on the slide (`replace_existing_asset: false`), so a slide can quietly accumulate
-two charts. `redesign_slide` defaults true. When the user wants to change, refresh or swap
-the existing image/chart, confirm and pass `replace_existing_asset: true` with
-`redesign_slide: true`. Same choice inside an `update_presentation` batch.
+**Adding vs. replacing:** the image tool adds by default and keeps existing pictures.
+To change, refresh, or swap an existing picture, confirm and pass
+`replace_existing_asset: true` with `redesign_slide: true`. The infographic tool has no
+separate replacement flag: its default `redesign_slide: true` replaces the existing chart
+or infographic, while `redesign_slide: false` adds the new infographic to the current
+composition. The same rules apply inside an `update_presentation` batch.
 
 ## Errors
 
