@@ -9,23 +9,19 @@ Looking for the stable plugin? Use
 
 ## What it provides
 
-Two ways to build a deck, selected by what you ask Claude and Ploxs to do:
+Two ways to build a deck:
 
 - **Ploxs generates the slides** — from notes, URLs, document text, or CSV data, in a
   saved brand style.
 - **Claude authors the slides** — Claude reads your Ploxs style config as
   concrete design tokens (stage geometry, palette, type scale, brand rules), writes the
-  slide HTML itself, checks it against the conversion contract, and submits it. The
+  final slide HTML once, and submits it for validation and conversion. The
   frames are converted exactly as authored and uploaded to your Google Drive as a
   Google Slides deck.
 
-  Use it when you ask Claude to create/design the slides and use Ploxs only for
-  conversion. If you do not specify who should create the initial slides, Claude asks
-  before starting.
-
-You can also set the account to **conversion only** from the Ploxs MCP setup page. That
-preference overrides individual prompt ambiguity: Claude authors every initial deck,
-while later edits still go through Ploxs.
+Choose **Ask every time** (the default), **Ploxs creates**, or **Assistant creates** on
+the Ploxs MCP setup page. Ask mode always confirms the creator before each new deck; the
+other modes route directly. Later edits still go through Ploxs.
 
 Both paths produce a normal Ploxs deck, so the editing tools — rewrite a slide, add
 slides, add generated images or infographics — work on either.
@@ -36,11 +32,11 @@ slides, add generated images or infographics — work on either.
   tokens — stage size, the seven palette colors, the deck's type scale, your brand rules,
   the fonts already loaded — and builds against those. It doesn't invent colors or fonts.
 - **Straight to slides.** Once Claude has the information and your style, it writes the
-  whole deck in one pass — every slide at once, no planning documents in between. That's
-  how Ploxs' own slide painter works too.
+  whole final deck in one pass — no prototype/validation slide, repeated HTML payload,
+  or planning document in between. That's how Ploxs' own slide painter works too.
 - **Charts are real Chart.js charts**, built only from numbers in your material and
-  captured into the deck during conversion. Claude checks chart frames before submitting,
-  because a chart that breaks the conversion rules would otherwise arrive as an empty box.
+  captured into the deck during conversion. Creation validates the chart contract before
+  it queues a job.
 - **Built once, then edited in place.** Generation or conversion creates the initial
   deck once. After it exists, changes go through Ploxs' editing tools on the same Google
   Slides file — so your link stays valid and you don't collect duplicate decks in Drive.
