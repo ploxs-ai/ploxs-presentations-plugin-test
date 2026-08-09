@@ -60,9 +60,10 @@ running. Keep the completed `deckRef`.
 
 ## Native creation
 
-1. Call **`get_html_frame_spec`** once with the chosen style. Set
-   `include_chart_spec: true` only when at least one final slide needs a chart; otherwise
-   leave it false so the large widget does not consume context.
+1. Call **`get_html_frame_spec`** once with the chosen style. Leave `include_chart_spec`
+   at its default (true) — the chart plumbing is unguessable, so a deck that discovers
+   mid-author that a slide compares quantities cannot add one without it. Pass false only
+   for a deck you know carries no quantitative data. **Keep the returned `styleRef`.**
 2. Treat HTML/CSS as the planning medium. Read the structured stage, palette, typography,
    briefs, contract, overlays, `patterns.catalog`, `techniques`, the two worked examples,
    and any requested chart protocol, then compose every
@@ -73,7 +74,10 @@ running. Keep the completed `deckRef`.
    between them from `patterns.catalog`: never reuse example copy or numbers, and never
    repeat one layout throughout the deck.
 3. Put the finished HTML directly in the complete `frames` array and send it to
-   **`create_presentation_from_html`** once, with the same style and a plain-text title.
+   **`create_presentation_from_html`** once, passing `style_ref` (the `styleRef` from
+   step 1) and a plain-text title. Never retype the style config on this call: a single
+   missing palette key rejects the entire authored deck, which is the most expensive way
+   this flow can fail.
    Creation performs converter validation before queueing, and invalid frames consume no
    job. Do not emit the HTML in chat or an intermediate document, and never repeat the
    large frame payload through a separate validation call.
@@ -86,10 +90,20 @@ Frames convert exactly as authored. Follow the returned contract literally, espe
 - no `font-family` declarations except deliberate monospace; deck fonts already apply
 - use the whole style as one design system while varying composition by message
 - use only supplied numbers and label estimates, projections, and dates on-slide
-- for charts, request and copy the returned Chart.js plumbing: unique canvas id, loader,
-  `dataset.initialized`, and `animation: false`
-- when data does not need a chart, use HTML markup so it converts to editable Slides
-  shapes instead of a flat chart image
+- **use the icon library** — `icons.mandate` resolves `__ICON_<keywords>__` placeholders to
+  professional inline SVG from a 200,000+ icon set. Give icons one consistent role across
+  the deck (metric tiles, capability rows, step markers). A deck with zero icons has left
+  the cheapest source of visual quality unused; a restrained style uses fewer and larger
+  icons, not none
+- **put a real chart on any slide whose point is a comparison, trend, distribution, or
+  part-of-whole** — copy the returned Chart.js plumbing exactly (unique canvas id, loader,
+  `dataset.initialized`, `animation: false`). CSS-drawn bars are decoration, not data, and
+  restating the numbers in prose wastes the slide
+- when data is not comparative, use HTML markup so it converts to editable Slides shapes
+  instead of a flat chart image
+- `techniques.degrades` lists editability trades, not quality warnings — gradients,
+  pseudo-element decoration, and clipped shapes all render as authored, so do not strip
+  decoration to avoid them
 
 ## Existing decks
 

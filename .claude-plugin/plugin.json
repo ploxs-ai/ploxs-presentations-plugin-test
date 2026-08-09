@@ -1,7 +1,7 @@
 {
   "name": "ploxs-presentations-test",
   "displayName": "Ploxs Presentations (Test)",
-  "version": "2.0.0",
+  "version": "2.1.1",
   "description": "Test build of the Ploxs presentation tools against test.ploxs.com, including agent-authored HTML frames.",
   "author": {
     "name": "Ploxs",
