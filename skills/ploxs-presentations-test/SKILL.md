@@ -33,6 +33,14 @@ status updates, and final links unless the user asks for explanation. Do not nar
 reasoning, write a prose slide plan, explain design choices, or print frame HTML before
 submitting it.
 
+## Chat image attachments
+
+For chat image attachments, call **`prepare_presentation_image_upload`** with their exact
+unique filenames, give its single `uploadUrl` to the user, and wait until
+**`get_presentation_image_upload_status`** returns `ready`. Pass the `sessionId` as
+`asset_session_id` to either creation tool. Native frames reference returned ids with
+`<img data-ploxs-image-id="presentation_image_N">`. Do not add descriptions or mapping.
+
 ## Choose a style
 
 Use exactly one style source per call.
@@ -52,8 +60,8 @@ Use exactly one style source per call.
 ## Ploxs creation
 
 Call **`create_presentation`** once with the source material (`markdown`, `urls`,
-`file_texts`, `csv_sources`), optional `instructions` / `slide_count`, and one style
-source. It creates a new Google Slides file.
+`file_texts`, `csv_sources`), optional `asset_session_id`, `instructions` / `slide_count`,
+and one style source. It creates a new Google Slides file.
 
 Then call **`wait_for_presentation`**. If `timedOut` is true, wait again; the job is still
 running. Keep the completed `deckRef`.
@@ -75,7 +83,7 @@ running. Keep the completed `deckRef`.
    repeat one layout throughout the deck.
 3. Put the finished HTML directly in the complete `frames` array and send it to
    **`create_presentation_from_html`** once, passing `style_ref` (the `styleRef` from
-   step 1) and a plain-text title. Never retype the style config on this call: a single
+   step 1), any ready `asset_session_id`, and a plain-text title. Never retype the style config on this call: a single
    missing palette key rejects the entire authored deck, which is the most expensive way
    this flow can fail.
    Creation performs converter validation before queueing, and invalid frames consume no
