@@ -10,9 +10,10 @@ decks are separate from production `ploxs.com` — never mix them in one convers
 
 Creation returns a `jobId`; edits return a `task`. Wait for completion before a
 dependent action or a completion claim.
-After creation, call **`get_presentation_status`** or **`wait_for_presentation`**
-(whichever the client exposes) with `timeout_seconds: 420`. If one name is absent from a
-cached tool catalog, use the other; never ask the user to return later for links.
+After creation, call **`wait_for_presentation`** (preferred) or
+**`get_presentation_status`** with `timeout_seconds: 420`; never stop at queued. Keep the
+`jobId`: later outline/edit tools accept it directly as `deck_ref`, so a same-chat edit
+never requires the user to paste the Slides URL.
 
 ## Start
 
@@ -43,9 +44,7 @@ unique filenames, give its single `uploadUrl` to the user, and wait until
 **`get_presentation_image_upload_status`** returns `ready`; the user may upload them in
 several selections from different folders. Pass the `sessionId` as
 `asset_session_id` to either creation tool. Native frames reference returned ids with
-`<img data-ploxs-image-id="presentation_image_N">`. Use the status result's
-`widthPx`/`heightPx`; use `cover` for a deliberate photo fill and `contain` when the whole
-image must remain visible. Do not add descriptions or mapping.
+`<img data-ploxs-image-id="presentation_image_N">`. Do not add descriptions or mapping.
 
 ## Choose a style
 
