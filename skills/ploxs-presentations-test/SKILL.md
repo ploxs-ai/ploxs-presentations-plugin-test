@@ -20,9 +20,10 @@ Tool results name the next step by number — trust that over your memory of thi
 4. Create **once**, passing `creator_choice` — **`create_presentation`** (ploxs), or
    **`get_html_frame_spec`** then **`create_presentation_from_html`** (native). Keep the
    returned `jobId` and `statusUrl`.
-5. **`get_presentation_status`** with that `jobId`. Each call waits ~45s; `timedOut: true`
-   means **still building, not failed** — call again immediately, as many times as it
-   takes. A normal deck needs a few calls.
+5. **`wait_for_presentation`** with that `jobId`; if the client exposes only the compatible
+   **`get_presentation_status`** name, use it instead. Each call waits ~45s; `timedOut: true`
+   means **still building, not failed** — call the same tool again immediately, as many
+   times as it takes.
 6. Finish with the full Google Slides edit and view URLs on separate lines. If you never
    got them, give the user the `statusUrl`. Never ask the user for a link.
 
@@ -84,8 +85,8 @@ Call **`create_presentation`** once with the source material (`markdown`, `urls`
 `file_texts`, `csv_sources`), optional `asset_session_id`, `instructions` / `slide_count`,
 and one style source. It creates a new Google Slides file.
 
-Then use either completion tool above with the `jobId`. If `timedOut` is true, call the
-same tool again with the same `jobId`. Keep the completed `deckRef`.
+Then use the completion tool from checklist step 5 with the `jobId`. If `timedOut` is
+true, call the same tool again with the same `jobId`. Keep the completed `deckRef`.
 
 ## Native creation
 
@@ -111,8 +112,8 @@ same tool again with the same `jobId`. Keep the completed `deckRef`.
    job. Do not emit the HTML in chat or an intermediate document, and never repeat the
    large frame payload through a separate validation call.
 4. If creation returns `invalid_html_frames`, repair only the named final frames and
-   resubmit. Otherwise use either completion tool above with its `jobId`; repeat only if
-   `timedOut` is true, then keep the `deckRef`.
+   resubmit. Otherwise use the completion tool from checklist step 5 with its `jobId`;
+   repeat only if `timedOut` is true, then keep the `deckRef`.
 
 Frames convert exactly as authored. Follow the returned contract literally, especially:
 
