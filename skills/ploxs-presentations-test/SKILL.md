@@ -37,7 +37,8 @@ submitting it.
 
 For chat image attachments, call **`prepare_presentation_image_upload`** with their exact
 unique filenames, give its single `uploadUrl` to the user, and wait until
-**`get_presentation_image_upload_status`** returns `ready`. Pass the `sessionId` as
+**`get_presentation_image_upload_status`** returns `ready`; the user may upload them in
+several selections from different folders. Pass the `sessionId` as
 `asset_session_id` to either creation tool. Native frames reference returned ids with
 `<img data-ploxs-image-id="presentation_image_N">`. Do not add descriptions or mapping.
 
