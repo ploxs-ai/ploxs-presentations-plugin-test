@@ -8,14 +8,23 @@ description: Create and edit designed Google Slides decks through the Ploxs TEST
 Test server `ploxs-test` at `https://test.ploxs.com/mcp`. Accounts, credits, styles and
 decks are separate from production `ploxs.com` — never mix them in one conversation.
 
-Creation returns a `jobId` and a `statusUrl`; edits return a `task`. Wait for completion
-before a dependent action or a completion claim.
-After creation, call **`get_presentation_status`** with that `jobId` — it waits through
-completion by default — and never stop at queued. If that call is unavailable, times out,
-or errors, give the user the `statusUrl`; it tracks the build and links the finished deck,
-so the turn never ends by asking them for a link. Keep the
-`jobId`: later outline/edit tools accept it directly as `deck_ref`, so a same-chat edit
-never requires the user to paste the Slides URL.
+## Deck checklist
+
+Every new deck runs these in order. Never skip one, never claim a step you did not run.
+Tool results name the next step by number — trust that over your memory of this page.
+
+1. **`get_account_status`** — obey `mcp.initialCreationMode` (see below).
+2. Chat image attachments — **`prepare_presentation_image_upload`** once, hand the user
+   the `uploadUrl`, then **`get_presentation_image_upload_status`** until `ready`.
+3. Style — one saved style the user picked, or one complete inline `style_config`.
+4. Create **once**, passing `creator_choice` — **`create_presentation`** (ploxs), or
+   **`get_html_frame_spec`** then **`create_presentation_from_html`** (native). Keep the
+   returned `jobId` and `statusUrl`.
+5. **`get_presentation_status`** with that `jobId`. Each call waits ~45s; `timedOut: true`
+   means **still building, not failed** — call again immediately, as many times as it
+   takes. A normal deck needs a few calls.
+6. Finish with the full Google Slides edit and view URLs on separate lines. If you never
+   got them, give the user the `statusUrl`. Never ask the user for a link.
 
 ## Start
 
@@ -26,13 +35,18 @@ never requires the user to paste the Slides URL.
 
    | Mode | Required behavior |
    | --- | --- |
-   | `ask` (default) | Always ask: “Should Ploxs create and design it, or should I create it natively and use Ploxs only to convert it?” Ask even when the request appears to choose a path. |
+   | `ask` (default) | Always ask: “Should Ploxs create and design it, or should I create it natively and use Ploxs only to convert it?” Ask even when the request appears to choose a path, then pass the answer as `creator_choice`. Both creation tools **refuse** an ask-mode call without it, so nothing is saved by skipping the question. |
    | `ploxs` | Use `create_presentation`; never author initial HTML frames. |
    | `native` | Author the initial slides and use `create_presentation_from_html`; never call `create_presentation`. |
 
    These modes apply only to initial creation. Existing-deck edits always use the edit
    tools.
 3. If the topic itself is missing, ask one short topic question before spending a job.
+
+Creation returns a `jobId` and a `statusUrl`; edits return a `task`. Wait for completion
+before a dependent action or a completion claim. Keep the `jobId`: later outline/edit
+tools accept it directly as `deck_ref`, so a same-chat edit never requires the user to
+paste the Slides URL.
 
 The presentation is the deliverable. Keep chat to required questions/actions, terse
 status updates, and final links unless the user asks for explanation. Do not narrate

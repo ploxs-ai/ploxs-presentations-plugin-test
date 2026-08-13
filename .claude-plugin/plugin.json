@@ -1,7 +1,7 @@
 {
   "name": "ploxs-presentations-test",
   "displayName": "Ploxs Presentations (Test)",
-  "version": "3.0.0",
+  "version": "3.1.1",
   "description": "Test build of the Ploxs presentation tools against test.ploxs.com, including agent-authored HTML frames.",
   "author": {
     "name": "Ploxs",
@@ -21,7 +21,8 @@
   "mcpServers": {
     "ploxs-test": {
       "type": "http",
-      "url": "https://test.ploxs.com/mcp"
+      "url": "https://test.ploxs.com/mcp",
+      "timeout": 450000
     }
   }
 }
