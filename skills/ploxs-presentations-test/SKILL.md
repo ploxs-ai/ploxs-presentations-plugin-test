@@ -8,10 +8,12 @@ description: Create and edit designed Google Slides decks through the Ploxs TEST
 Test server `ploxs-test` at `https://test.ploxs.com/mcp`. Accounts, credits, styles and
 decks are separate from production `ploxs.com` — never mix them in one conversation.
 
-Creation returns a `jobId`; edits return a `task`. Wait for completion before a
-dependent action or a completion claim.
-After creation, call **`wait_for_presentation`** (preferred) or
-**`get_presentation_status`** with `timeout_seconds: 420`; never stop at queued. Keep the
+Creation returns a `jobId` and a `statusUrl`; edits return a `task`. Wait for completion
+before a dependent action or a completion claim.
+After creation, call **`get_presentation_status`** with that `jobId` — it waits through
+completion by default — and never stop at queued. If that call is unavailable, times out,
+or errors, give the user the `statusUrl`; it tracks the build and links the finished deck,
+so the turn never ends by asking them for a link. Keep the
 `jobId`: later outline/edit tools accept it directly as `deck_ref`, so a same-chat edit
 never requires the user to paste the Slides URL.
 
