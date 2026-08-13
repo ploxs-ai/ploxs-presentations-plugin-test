@@ -10,8 +10,9 @@ decks are separate from production `ploxs.com` — never mix them in one convers
 
 Creation returns a `jobId`; edits return a `task`. Wait for completion before a
 dependent action or a completion claim.
-If a named tool is deferred, load it through the client's MCP tool discovery; never ask
-the user to return later just because a completion tool is not currently loaded.
+After creation, call **`get_presentation_status`** or **`wait_for_presentation`**
+(whichever the client exposes) with `timeout_seconds: 420`. If one name is absent from a
+cached tool catalog, use the other; never ask the user to return later for links.
 
 ## Start
 
@@ -42,7 +43,9 @@ unique filenames, give its single `uploadUrl` to the user, and wait until
 **`get_presentation_image_upload_status`** returns `ready`; the user may upload them in
 several selections from different folders. Pass the `sessionId` as
 `asset_session_id` to either creation tool. Native frames reference returned ids with
-`<img data-ploxs-image-id="presentation_image_N">`. Do not add descriptions or mapping.
+`<img data-ploxs-image-id="presentation_image_N">`. Use the status result's
+`widthPx`/`heightPx`; use `cover` for a deliberate photo fill and `contain` when the whole
+image must remain visible. Do not add descriptions or mapping.
 
 ## Choose a style
 
@@ -66,8 +69,8 @@ Call **`create_presentation`** once with the source material (`markdown`, `urls`
 `file_texts`, `csv_sources`), optional `asset_session_id`, `instructions` / `slide_count`,
 and one style source. It creates a new Google Slides file.
 
-Then call **`get_presentation_status`** with the `jobId` and `timeout_seconds: 420`. If
-`timedOut` is true, call it again with the same `jobId`. Keep the completed `deckRef`.
+Then use either completion tool above with the `jobId`. If `timedOut` is true, call the
+same tool again with the same `jobId`. Keep the completed `deckRef`.
 
 ## Native creation
 
@@ -93,8 +96,8 @@ Then call **`get_presentation_status`** with the `jobId` and `timeout_seconds: 4
    job. Do not emit the HTML in chat or an intermediate document, and never repeat the
    large frame payload through a separate validation call.
 4. If creation returns `invalid_html_frames`, repair only the named final frames and
-   resubmit. Otherwise call **`get_presentation_status`** with its `jobId` and
-   `timeout_seconds: 420`; repeat only if `timedOut` is true, then keep the `deckRef`.
+   resubmit. Otherwise use either completion tool above with its `jobId`; repeat only if
+   `timedOut` is true, then keep the `deckRef`.
 
 Frames convert exactly as authored. Follow the returned contract literally, especially:
 
