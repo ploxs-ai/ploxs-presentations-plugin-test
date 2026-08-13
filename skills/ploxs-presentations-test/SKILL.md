@@ -10,6 +10,8 @@ decks are separate from production `ploxs.com` — never mix them in one convers
 
 Creation returns a `jobId`; edits return a `task`. Wait for completion before a
 dependent action or a completion claim.
+If a named tool is deferred, load it through the client's MCP tool discovery; never ask
+the user to return later just because a completion tool is not currently loaded.
 
 ## Start
 
@@ -64,8 +66,8 @@ Call **`create_presentation`** once with the source material (`markdown`, `urls`
 `file_texts`, `csv_sources`), optional `asset_session_id`, `instructions` / `slide_count`,
 and one style source. It creates a new Google Slides file.
 
-Then call **`wait_for_presentation`**. If `timedOut` is true, wait again; the job is still
-running. Keep the completed `deckRef`.
+Then call **`get_presentation_status`** with the `jobId` and `timeout_seconds: 420`. If
+`timedOut` is true, call it again with the same `jobId`. Keep the completed `deckRef`.
 
 ## Native creation
 
@@ -91,11 +93,14 @@ running. Keep the completed `deckRef`.
    job. Do not emit the HTML in chat or an intermediate document, and never repeat the
    large frame payload through a separate validation call.
 4. If creation returns `invalid_html_frames`, repair only the named final frames and
-   resubmit. Otherwise call **`wait_for_presentation`** and keep the `deckRef`.
+   resubmit. Otherwise call **`get_presentation_status`** with its `jobId` and
+   `timeout_seconds: 420`; repeat only if `timedOut` is true, then keep the `deckRef`.
 
 Frames convert exactly as authored. Follow the returned contract literally, especially:
 
-- one fixed 1280×720 frame per slide with one top-level element and inline CSS
+- one fixed 1280×720 frame per slide with one top-level element and inline CSS; the root
+  explicitly owns that full canvas and authors every inset/alignment itself because Ploxs
+  adds no margins, centering, scaling, or repositioning to native frames
 - no `font-family` declarations except deliberate monospace; deck fonts already apply
 - use the whole style as one design system while varying composition by message
 - use only supplied numbers and label estimates, projections, and dates on-slide
