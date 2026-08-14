@@ -1,7 +1,7 @@
 {
   "name": "ploxs-presentations-test",
   "displayName": "Ploxs Presentations (Test)",
-  "version": "3.1.4",
+  "version": "3.1.5",
   "description": "Test build of the Ploxs presentation tools against test.ploxs.com, including agent-authored HTML frames.",
   "author": {
     "name": "Ploxs",
@@ -9,7 +9,7 @@
     "url": "https://test.ploxs.com"
   },
   "homepage": "https://test.ploxs.com/mcp/setup",
-  "repository": "https://github.com/vipinsanthosh/ploxs-presentations-plugin-test",
+  "repository": "https://github.com/ploxs-ai/ploxs-presentations-plugin-test",
   "license": "MIT",
   "keywords": [
     "presentations",

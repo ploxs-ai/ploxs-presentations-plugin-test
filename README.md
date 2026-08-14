@@ -5,7 +5,7 @@ isolated Ploxs **test** server at `https://test.ploxs.com/mcp` and never touches
 production `ploxs.com`.
 
 Looking for the stable plugin? Use
-[ploxs-presentations-plugin](https://github.com/vipinsanthosh/ploxs-presentations-plugin).
+[ploxs-presentations-plugin](https://github.com/ploxs-ai/ploxs-presentations-plugin).
 
 ## What it provides
 
@@ -53,7 +53,7 @@ In Claude Desktop or claude.ai:
 2. **+** → **Add marketplace** → **Add from a repository**, and paste:
 
    ```txt
-   https://github.com/vipinsanthosh/ploxs-presentations-plugin-test.git
+   https://github.com/ploxs-ai/ploxs-presentations-plugin-test.git
    ```
 
 3. Install **Ploxs Presentations (Test)** from the newly added marketplace.
@@ -64,7 +64,7 @@ In Claude Desktop or claude.ai:
 In Claude Code:
 
 ```txt
-/plugin marketplace add vipinsanthosh/ploxs-presentations-plugin-test
+/plugin marketplace add ploxs-ai/ploxs-presentations-plugin-test
 /plugin install ploxs-presentations-test@ploxs-test
 ```
 
