@@ -167,7 +167,9 @@ against the deck state at that operation.
 - `presentation_not_connected` → call `connect_presentation`.
 - `slide_not_found` → fetch the live outline again.
 - `active_job_limit` / `rate_limited` → wait, then retry.
-- Entitlement or credit errors → report them; do not retry.
+- Entitlement or credit errors: report the billing link and wait. After the user
+  recharges or usage becomes available, continue in this same chat and retry the
+  original tool call with the existing job or deck context.
 
 Never invent a `deckRef` or slide number. On completion, label the Google Slides edit and
 view URLs and put each full URL on its own line.
