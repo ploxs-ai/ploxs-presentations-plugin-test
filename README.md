@@ -19,7 +19,7 @@ Two ways to build a deck:
   frames are converted exactly as authored and uploaded to your Google Drive as a
   Google Slides deck.
 
-Choose **Ask every time** (the default), **Ploxs creates**, or **Assistant creates** on
+Choose **Ask every time**, **Ploxs creates**, or **Assistant creates** (the default) on
 the Ploxs MCP setup page. Ask mode always confirms the creator before each new deck; the
 other modes route directly. Later edits still go through Ploxs.
 
