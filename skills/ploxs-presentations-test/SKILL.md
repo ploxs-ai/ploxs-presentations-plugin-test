@@ -202,8 +202,9 @@ Frames convert exactly as authored. Follow the returned contract literally, espe
   behavior.
 - To insert new slides, pass authored `frames` to **`add_slides`**. It inserts those
   frames at the end or before/after an anchor without replacing an existing slide.
-  Use `content` only for legacy server-generated insertion. For compound authored edits,
-  use `update_presentation` with `edit_slide` and `add_slides` operations carrying HTML.
+  MCP insertion is HTML-only, so Ploxs does not design the inserted slides. For compound
+  authored edits, use `update_presentation` with `edit_slide` and `add_slides` operations
+  carrying HTML.
 - Wait with **`wait_for_presentation_edit`** before dependent edits, and keep no more
   than three edit tasks active per key.
 - Creation tools never update a deck. Calling either again creates a duplicate Drive
