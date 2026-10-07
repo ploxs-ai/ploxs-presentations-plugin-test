@@ -70,6 +70,13 @@ to **`create_presentation_from_html`**, and reference the returned ids in the fr
 `<img data-ploxs-image-id="presentation_image_N">`. Do not create the deck without
 supplied images or generate replacements for them. Do not add descriptions or mapping.
 
+The same flow works after the deck exists. When the user shares a photo for an existing
+deck ("put this photo on slide 2"), run the upload the same way, then place the image in
+the `edit_slide` html, the `add_slides` frames, or the `update_presentation` operations,
+and pass the `sessionId` as `asset_session_id` with the same `deck_ref`. Each edit may
+place only some of the session's images. Never create a new deck to add the user's
+photos.
+
 ## Choose a style
 
 Use exactly one style source per call.
@@ -148,6 +155,8 @@ Frames convert exactly as authored. Follow the returned contract literally, espe
   as `html`; Ploxs validates the frame, resolves `__ICON_<keywords>__` through its
   hosted icon library, converts it, and replaces the selected slide. No Ploxs design
   model runs in this path.
+- If the user supplied their own photo for the slide, use the upload flow in
+  "Supplied presentation images" and pass `asset_session_id` with the edit.
 - If the slide needs a generated visual, call **`generate_image`** with the deck ref and
   a precise prompt. It returns a public `assetUrl`, pixel dimensions, and the actual
   `aspectRatio`; decide the placement in your authored HTML and reference that URL with
@@ -179,6 +188,12 @@ state at that operation.
 - `presentation_not_connected` → call `connect_presentation`.
 - `slide_not_found` → fetch the live outline again.
 - `active_job_limit` / `rate_limited` → wait, then retry.
+- `presentation_image_session_required` → run the upload flow and pass its
+  `asset_session_id` with the same frames.
+- `presentation_image_reference_missing` / `presentation_image_reference_invalid` →
+  place each uploaded image with an `imageId` the upload session returned.
+- `presentation_image_upload_not_ready` → wait for the status to report `ready`;
+  `presentation_image_upload_expired` → create a new upload link.
 - Entitlement or credit errors from **`generate_image`**: report the billing link and
   wait. HTML-frame creation and authored edits remain credit-free. After the user
   recharges or usage becomes available, continue in this same chat and retry the
