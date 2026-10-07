@@ -9,22 +9,13 @@ Looking for the stable plugin? Use
 
 ## What it provides
 
-Two ways to build a deck:
+Claude authors the slides. It reads your Ploxs style config as concrete design tokens
+(stage geometry, palette, type scale, brand rules), writes the final slide HTML once,
+and submits it for validation and conversion. The frames are converted exactly as
+authored and uploaded to your Google Drive as a Google Slides deck.
 
-- **Ploxs generates the slides** — from notes, URLs, document text, or CSV data, in a
-  saved brand style.
-- **Claude authors the slides** — Claude reads your Ploxs style config as
-  concrete design tokens (stage geometry, palette, type scale, brand rules), writes the
-  final slide HTML once, and submits it for validation and conversion. The
-  frames are converted exactly as authored and uploaded to your Google Drive as a
-  Google Slides deck.
-
-Choose **Ask every time**, **Ploxs creates**, or **Assistant creates** (the default) on
-the Ploxs MCP setup page. Ask mode always confirms the creator before each new deck; the
-other modes route directly. Later edits still go through Ploxs.
-
-Both paths produce a normal Ploxs deck, so the editing tools — rewrite a slide, add
-slides, add generated images or infographics — work on either.
+Later edits work the same way: Claude rewrites a slide or authors new slides, and Ploxs
+converts and applies them to the live deck.
 
 ### How the authored path behaves
 
@@ -87,8 +78,8 @@ Claude simply resumes waiting if it's cut short.
 
 ## Before it can create decks
 
-Sign in at [test.ploxs.com](https://test.ploxs.com), connect Google Drive in Settings,
-and make sure the account has usage available. Ploxs creates the Slides file in your own
+Sign in at [test.ploxs.com](https://test.ploxs.com) and connect Google Drive in Settings.
+Generated images need usage available. Ploxs creates the Slides file in your own
 Drive, so Drive linking cannot be done headlessly from Claude. Test accounts, styles,
 credits, and decks are separate from production.
 

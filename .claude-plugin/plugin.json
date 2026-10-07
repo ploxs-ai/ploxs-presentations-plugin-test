@@ -1,7 +1,7 @@
 {
   "name": "ploxs-presentations-test",
   "displayName": "Ploxs Presentations (Test)",
-  "version": "5.2.5",
+  "version": "6.0.0",
   "description": "Test build of the Ploxs presentation tools against test.ploxs.com, with chat-authored slide HTML and server-hosted assets.",
   "author": {
     "name": "Ploxs",
