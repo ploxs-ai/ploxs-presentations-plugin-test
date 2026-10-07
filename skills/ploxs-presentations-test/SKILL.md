@@ -63,14 +63,14 @@ submitting it.
 
 For images already supplied for the deck, including images generated earlier in the
 chat, call **`prepare_presentation_image_upload`** with their exact unique filenames,
-exactly as each attachment shows it in the chat. Never rename a file, add a prefix, or use
-a copy from your own file system or sandbox (such as `1d4795d9-image.png`). If you cannot
-see an image's original filename, ask the user what the file is called on their device.
-Never ask the user to rename a file. Then give its single `uploadUrl` to the user, and
-wait until **`get_presentation_image_upload_status`** returns `ready`; the user may upload
-them in
-several selections from different folders. Pass the `sessionId` as `asset_session_id`
-to **`create_presentation_from_html`**, and reference the returned ids in the frames with
+exactly as the chat shows them, and pass `descriptions`: a short description of what
+each image shows (for example "Rule 30 diagram"). Never rename a file or use a copy from
+your own file system or sandbox. Some chat apps show generated names instead of the user's
+real ones; the upload page lists each image by its description so the user picks the
+right file under any filename. Never ask the user to rename a file. Give the single
+`uploadUrl` to the user, and wait until **`get_presentation_image_upload_status`** returns
+`ready`; the user may upload them in several selections from different folders. Pass
+the `sessionId` as `asset_session_id` to **`create_presentation_from_html`**, and reference the returned ids in the frames with
 `<img data-ploxs-image-id="presentation_image_N">`. Do not create the deck without
 supplied images or generate replacements for them. Do not add descriptions or mapping.
 
