@@ -63,15 +63,20 @@ submitting it.
 
 For images already supplied for the deck, including images generated earlier in the
 chat, call **`prepare_presentation_image_upload`** with their exact unique filenames,
-give its single `uploadUrl` to the user, and wait until
-**`get_presentation_image_upload_status`** returns `ready`; the user may upload them in
+exactly as each attachment shows it in the chat. Never rename a file, add a prefix, or use
+a copy from your own file system or sandbox (such as `1d4795d9-image.png`). If you cannot
+see an image's original filename, ask the user what the file is called on their device.
+Never ask the user to rename a file. Then give its single `uploadUrl` to the user, and
+wait until **`get_presentation_image_upload_status`** returns `ready`; the user may upload
+them in
 several selections from different folders. Pass the `sessionId` as `asset_session_id`
 to **`create_presentation_from_html`**, and reference the returned ids in the frames with
 `<img data-ploxs-image-id="presentation_image_N">`. Do not create the deck without
 supplied images or generate replacements for them. Do not add descriptions or mapping.
 
 The same flow works after the deck exists. When the user shares a photo for an existing
-deck ("put this photo on slide 2"), run the upload the same way, then place the image in
+deck ("put this photo on slide 2"), make the upload your first step, exactly as at
+creation, before reading or inlining the image any other way. Then place the image in
 the `edit_slide` html, the `add_slides` frames, or the `update_presentation` operations,
 and pass the `sessionId` as `asset_session_id` with the same `deck_ref`. Each edit may
 place only some of the session's images. Never create a new deck to add the user's
