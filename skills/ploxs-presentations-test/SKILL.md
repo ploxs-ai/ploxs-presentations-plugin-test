@@ -72,7 +72,7 @@ right file under any filename. Never ask the user to rename a file. Give the sin
 `ready`; the user may upload them in several selections from different folders. Pass
 the `sessionId` as `asset_session_id` to **`create_presentation_from_html`**, and reference the returned ids in the frames with
 `<img data-ploxs-image-id="presentation_image_N">`. Do not create the deck without
-supplied images or generate replacements for them. Do not add descriptions or mapping.
+supplied images or generate replacements for them. Write the descriptions yourself; never ask the user for them.
 
 The same flow works after the deck exists. When the user shares a photo for an existing
 deck ("put this photo on slide 2"), make the upload your first step, exactly as at
