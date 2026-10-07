@@ -36,8 +36,10 @@ Tool results name the next step by number - trust that over your memory of this 
    **`get_presentation_status`** name, use it instead. Each call waits ~45s; `timedOut: true`
    means **still building, not failed** - continue polling while the task is active,
    subject to the stopping conditions above.
-6. Finish with the full Google Slides edit and view URLs on separate lines. If you never
-   got them, give the user the `statusUrl`. Never ask the user for a link.
+6. Finish with the full Google Slides edit and view URLs on separate lines. Then share
+   the returned public `mcpGuideUrl`, which explains every MCP capability in simple
+   language, including batch updates. If you never got the deck links, give the user
+   the `statusUrl` and `mcpGuideUrl`. Never ask the user for a link.
 
 ## Start
 
