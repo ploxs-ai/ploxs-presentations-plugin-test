@@ -39,8 +39,9 @@ Tool results name the next step by number - trust that over your memory of this 
 5. **`wait_for_presentation`** with that `jobId`; if the client exposes only the compatible
    **`get_presentation_status`** name, use it instead. Each call waits ~45s; `timedOut: true`
    means **still building, not failed** - continue polling while the task is active,
-   subject to the stopping conditions above. If the finished result reports a
-   **LAYOUT CHECK** (`layoutWarnings`), fix those slides with **`edit_slide`** first.
+   subject to the stopping conditions above. When it finishes, look at the deck with
+   **`get_slide_images`** and fix any **LAYOUT CHECK** slide (`layoutWarnings`) or
+   visible flaw with **`edit_slide`** first.
 6. Finish with the full Google Slides edit and view URLs on separate lines. Then share
    the returned `mcpGuideUrl`, a short page of follow-up prompts the user can copy to keep
    editing the deck. If you never got the deck links, give the user the `statusUrl`.
@@ -207,8 +208,27 @@ Frames convert exactly as authored. Follow the returned contract literally, espe
 
 - Use **`list_presentations`** to find known decks.
 - Use **`connect_presentation`** for another Slides URL/id. If it returns an `actionUrl`,
-  give it to the user and retry only after approval.
+  give that short-lived link to the user; they pick the exact file in Google's file
+  picker, then call `connect_presentation` again.
+- **Decks Ploxs did not make**: call `connect_presentation` with only the presentation.
+  It returns an onboarding report: the deck's exact theme colours and fonts, every
+  slide's text, slide images, and a PDF link. Write one complete `style_config` that
+  reproduces that deck (do not invent a new look) and call `connect_presentation` again
+  with it to finish connecting.
+- **Look at a deck** with **`get_slide_images`**: leave `slides` empty for an overview
+  of every slide, or name slides for a readable close-up. Use **`read_slide`** for one
+  slide's exact elements: ids, boxes, text, fonts, colours, image crops, and notes.
+- Give the user a file with **`export_presentation`** (`pdf` or `pptx`): it returns a
+  short-lived download link; call again for a fresh one.
 - Fetch **`get_presentation_outline`** before targeting a slide number.
+- **Small changes** go through `update_presentation`'s native steps, which keep
+  everything they do not name: `replace_text` and `replace_image` (element ids from
+  `read_slide`; the image is centre-cropped into the existing frame),
+  `replace_all_text`, `set_speaker_notes`, `duplicate_slide`, `move_slides`, and
+  `delete_slides` (only slides the user asked to remove). Use them instead of
+  rebuilding a slide, above all on decks Ploxs did not make.
+- A deck whose pages are not 16:9 has its own stage (for example 960x720 on a 4:3
+  deck): `get_presentation_frame_spec` returns it, and frames must use that width.
 - For a redesign or modification, call **`get_presentation_frame_spec`** once for the
   connected deck, then author the complete final frame yourself. Put it in `edit_slide`
   as `html`; Ploxs validates the frame, resolves `__ICON_<keywords>__` through its
