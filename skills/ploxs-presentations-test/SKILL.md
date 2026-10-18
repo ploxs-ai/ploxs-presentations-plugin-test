@@ -93,9 +93,9 @@ photos.
 
 ## Images
 
-Images come from two sources. Royalty-free stock images (**`search_stock_images`**, then
-**`use_stock_image`**, from Pixabay) are free for the user. AI-generated images
-(**`generate_image`**) spend the user's credits. Follow `generatedImages` from
+Images come from two sources. Royalty-free stock photos from Pixabay are free, and the
+user picks them: **`prepare_stock_image_picker`** opens a page of thumbnails for your
+searches. AI-generated images (**`generate_image`**) spend the user's credits. Follow `generatedImages` from
 `get_account_status`: `policy` combines the user's Settings choice (on / off / ask every
 time) with what the account can use, and `sources` lists the sources you may use
 (`stock`, and `ai` when the account has credits or a membership).
@@ -106,41 +106,42 @@ time) with what the account can use, and `sources` lists the sources you may use
   slide no stock result fits.
 - `ask_user` - right after `get_account_status`, ask once, offering only what `sources`
   allows. With both: "Which images should I add? 1) AI-generated and royalty-free stock
-  images, 2) royalty-free stock images only (free), 3) AI-generated images only (uses your
-  Ploxs credits), or 4) no images." With only stock, offer stock images or none; with only
+  images, 2) royalty-free stock images only (free; you pick each photo from search
+  results), 3) AI-generated images only (uses your Ploxs credits), or 4) no images." With
+  only stock, offer stock images or none; with only
   `ai`, offer AI-generated images or none. The answer becomes this deck's sources with
   policy `auto`; "no images" means `on_request`. Skip the question when the request
   already says which images to use.
 - `on_request` - add only images the user explicitly asks for, from the source they name.
   When they ask for an image without saying which kind ("add an image to slide 4"), ask
-  before adding it: "Should I use a royalty-free stock photo (free) or an AI-generated
-  image (uses your Ploxs credits)?" Never choose for them, because one source spends
+  before adding it: "Should I use a royalty-free stock photo (free, you pick it) or an
+  AI-generated image (uses your Ploxs credits)?" Never choose for them, because one source spends
   credits. Skip the question only when `sources` lists a single source.
 - No `get_account_status` in this chat yet: treat the policy as `on_request`.
 
-Pass `requested_by: "auto"` for an image you chose to add and `"user"` for one the user
-asked for, on `use_stock_image` and `generate_image` alike. Decide the shape of each
-image slot first.
+Decide the shape of each image slot first.
 
-- **Stock**: call `search_stock_images` with a few concrete English nouns for what the
-  photo shows ("container ship harbor dusk") and an `orientation` that matches the slot.
-  It returns candidates with an id, tags, size, and shape, plus a small preview of each.
-  Pick one and call `use_stock_image` with its id: it re-hosts the image on Ploxs and
-  returns the `assetUrl`, `widthPx`, and `heightPx` to place. When Pixabay is limiting
-  downloads it keeps trying for about a minute, so a slow answer is normal. Never put a
-  `pixabay.com` URL on a slide. No on-slide credit is needed; when the deck uses stock images, say in
-  one line of the final message that they come from Pixabay.
+- **Stock**: call `prepare_stock_image_picker` once with every stock photo you want, each
+  with a description of what it shows and where it goes ("Slide 3: rain over a river
+  valley"), a few concrete English nouns to search ("rain river valley"), and an
+  `orientation` that matches its box. Give the user the returned `pickerUrl`. The page
+  shows each search as thumbnails; the user picks a photo for each image, refines the
+  search, uploads their own, or skips it. You never see or choose the photos. While they
+  pick, author the frames with `<img data-ploxs-image-id="presentation_image_N">` in boxes
+  with an explicit size and `object-fit: cover`. Then call
+  `get_presentation_image_upload_status` with `wait_seconds: 45` (again while it is still
+  waiting), remove the `<img>` of any `skippedImageIds`, and pass the `sessionId` as
+  `asset_session_id`. Never put a `pixabay.com` URL on a slide. No on-slide credit is
+  needed; when the deck uses stock photos, say in one line of the final message that
+  they come from Pixabay.
 - **Generated**: for a new deck, call `generate_image` after `get_html_frame_spec` with
   its `style_ref`; for an existing deck pass `deck_ref`. Request the slot's
-  `aspect_ratio`.
-
-Place each returned `assetUrl` in the frames with `<img>` before
-`create_presentation_from_html` (or in the edit html for an existing deck), fitted to the
-returned `widthPx`/`heightPx` as the contract describes.
+  `aspect_ratio`, pass `requested_by: "auto"` for an image you chose to add and `"user"`
+  for one the user asked for, and place the returned `assetUrl` with `<img>`, fitted to
+  the returned `widthPx`/`heightPx` as the contract describes.
 
 An automatic image that fails, or credits that run out, never stops the deck: compose
-that slide without the image (or with a stock image, or a clean placeholder panel in the
-deck style), make no more `generate_image` calls for the deck after a credit error, and
+that slide without the image (or with a clean placeholder panel in the deck style), make no more `generate_image` calls for the deck after a credit error, and
 keep building. Do not ask the user mid-build; at most note the skipped images in one line
 of the final message.
 
@@ -288,13 +289,14 @@ Frames convert exactly as authored. Follow the returned contract literally, espe
 - If the user supplied their own photo for the slide, use the upload flow in
   "Supplied presentation images" and pass `asset_session_id` with the edit.
 - If the slide needs a picture (see "Images"; ask stock or AI-generated when the user
-  did not say), use a stock image through
-  **`search_stock_images`** and **`use_stock_image`**, or call **`generate_image`** with
-  the deck ref and a precise prompt. Both return a public `assetUrl`, pixel dimensions,
-  and the actual `aspectRatio`; decide the placement in your authored HTML and reference
-  that URL with `<img>`, fitted to that shape with `object-fit: cover` or a matching
-  `aspect-ratio`. To swap a picture in place on a deck Ploxs did not make, pass the
-  `assetUrl` as `image_url` in a `replace_image` step.
+  did not say): for a stock photo, open **`prepare_stock_image_picker`** so the user picks
+  it, then place it as `<img data-ploxs-image-id="presentation_image_N">` and pass the
+  picker's `sessionId` as `asset_session_id` with the edit (or `image_id` in a
+  `replace_image` step). For a generated one, call **`generate_image`** with the deck ref
+  and a precise prompt; it returns a public `assetUrl`, pixel dimensions, and the actual
+  `aspectRatio`, placed with `<img>` and fitted with `object-fit: cover` or a matching
+  `aspect-ratio`, or passed as `image_url` in a `replace_image` step to swap a picture in
+  place on a deck Ploxs did not make.
 - Put Chart.js markup directly in the authored frame using the returned chart protocol.
   If the frame spec is truncated or the chart block is unavailable, call
   **`get_chart_spec`**; it returns the library URL, rules, and complete working example
@@ -325,7 +327,8 @@ state at that operation.
 - `presentation_image_session_required` → run the upload flow and pass its
   `asset_session_id` with the same frames.
 - `presentation_image_reference_missing` / `presentation_image_reference_invalid` →
-  place each uploaded image with an `imageId` the upload session returned.
+  place each uploaded or picked image with an `imageId` the session returned, and leave
+  out images the user skipped.
 - `presentation_image_upload_not_ready` → wait for the status to report `ready`;
   `presentation_image_upload_expired` → create a new upload link.
 - Entitlement or credit errors from **`generate_image`** on an image the user asked
@@ -333,10 +336,10 @@ state at that operation.
   credit-free. After the user recharges or usage becomes available, continue in this
   same chat and retry the original tool call with the existing job or deck context.
 - Any error on an automatic image (`requested_by: "auto"`), including
-  `INSUFFICIENT_CREDITS`, `stock_images_rate_limited`, and `auto_images_off`: build that
-  slide without the image and keep going.
-- `stock_images_rate_limited` on an image the user asked for: wait the seconds it names,
-  then retry. `stock_image_not_found`: use an id from a `search_stock_images` result.
+  `INSUFFICIENT_CREDITS` and `auto_images_off`: build that slide without the image and
+  keep going.
+- `stock_images_unavailable` from `prepare_stock_image_picker`: build without stock
+  photos, or offer a generated image under the rules above.
 
 Never invent a `deckRef` or slide number. On completion, label the Google Slides edit and
 view URLs and put each full URL on its own line.
