@@ -10,7 +10,7 @@ decks are separate from production `ploxs.com` — never mix them in one convers
 
 Use this workflow for the user's requested Ploxs presentation work. The chat agent owns
 slide design: it writes the final HTML/CSS, copy, layout, images, and Chart.js charts.
-Ploxs supplies hosted image generation, royalty-free stock image search, and icon
+Ploxs supplies hosted image generation, royalty-free image search, and icon
 substitution, converts the authored frame,
 and applies it to Google Slides. Explicit user
 instructions take precedence over workflow and design defaults. Those defaults do
@@ -28,7 +28,7 @@ Tool results name the next step by number - trust that over your memory of this 
 
 1. **`get_account_status`** - Google Drive must be connected (see below). Then follow
    `generatedImages.policy`: `ask_user` means ask the user once, now, which images to
-   add - AI-generated, royalty-free stock, both, or none (see "Images").
+   add - AI-generated, royalty-free, both, or none (see "Images").
 2. Images already supplied for the deck - **`prepare_presentation_image_upload`** once,
    hand the user the `uploadUrl`, then **`get_presentation_image_upload_status`** until
    `ready`. Reference them in the frames, never as a later edit.
@@ -36,7 +36,7 @@ Tool results name the next step by number - trust that over your memory of this 
    from the deck's subject, not a default look.
 4. **`get_html_frame_spec`** once, author every final frame, then
    **`create_presentation_from_html`** **once**. Keep the returned `jobId` and `statusUrl`.
-   Get any images for the deck (stock or generated) between the spec and authoring - do
+   Get any images for the deck (royalty-free or generated) between the spec and authoring - do
    not overdo it; a failed automatic image never stops the deck.
 5. **`wait_for_presentation`** with that `jobId`; if the client exposes only the compatible
    **`get_presentation_status`** name, use it instead. Each call waits ~45s; `timedOut: true`
@@ -53,7 +53,7 @@ Tool results name the next step by number - trust that over your memory of this 
 1. Call **`get_account_status`** before every initial deck. If
    `google.driveConnected` is false, give the user `links.googleDrive` / `links.settings`
    and wait. Creating a deck from authored HTML frames, authored edits, and royalty-free
-   stock images are credit-free; only **`generate_image`** uses credits. The same result
+   royalty-free images are credit-free; only **`generate_image`** uses credits. The same result
    carries `generatedImages.policy` and `generatedImages.sources`, the user's choice
    about images for this deck.
 2. If the topic itself is missing, ask one short topic question before spending a job.
@@ -78,10 +78,12 @@ your own file system or sandbox. Some chat apps show generated names instead of 
 real ones; the upload page lists each image by its description so the user picks the
 right file under any filename. Never ask the user to rename a file. Give the single
 `uploadUrl` to the user, and wait until **`get_presentation_image_upload_status`** returns
-`ready`; the user may upload them in several selections from different folders. Pass
+`ready`; the user may upload them in several selections from different folders, rename a
+scene, or add scenes of their own (`addedByUser`; place those too). The ready result
+shows each image as a thumbnail under its scene heading: look at it before you place it. Pass
 the `sessionId` as `asset_session_id` to **`create_presentation_from_html`**, and reference the returned ids in the frames with
 `<img data-ploxs-image-id="presentation_image_N">`. Do not create the deck without
-supplied images or swap in stock or generated replacements for them. Write the descriptions yourself; never ask the user for them.
+supplied images or swap in royalty-free or generated replacements for them. Write the descriptions yourself; never ask the user for them.
 
 The same flow works after the deck exists. When the user shares a photo for an existing
 deck ("put this photo on slide 2"), make the upload your first step, exactly as at
@@ -93,47 +95,54 @@ photos.
 
 ## Images
 
-Images come from two sources. Royalty-free stock photos from Pixabay are free, and the
-user picks them: **`prepare_stock_image_picker`** opens a page of thumbnails for your
-searches. AI-generated images (**`generate_image`**) spend the user's credits. Follow `generatedImages` from
+Images come from two sources. Royalty-free images from Pixabay are free, and the user
+picks them: **`prepare_stock_image_picker`** opens a page of scene cards with thumbnails
+for your searches. Call them royalty-free images when talking to the user, never stock
+photos. AI-generated images (**`generate_image`**) spend the user's credits. Follow `generatedImages` from
 `get_account_status`: `policy` combines the user's Settings choice (on / off / ask every
 time) with what the account can use, and `sources` lists the sources you may use
-(`stock`, and `ai` when the account has credits or a membership).
+(`stock` for royalty-free images, and `ai` when the account has credits or a membership).
 
 - `auto` - add images wherever you judge they make the deck better, from `sources` only,
-  without overdoing it. With both sources, prefer a stock photo for real places, people,
-  objects, food, and nature, and generate an image for a concept, a bespoke scene, or a
-  slide no stock result fits.
+  without overdoing it. With both sources, prefer a royalty-free image for real places,
+  people, objects, food, and nature, and generate an image for a concept, a bespoke
+  scene, or a slide no royalty-free image fits.
 - `ask_user` - right after `get_account_status`, ask once, offering only what `sources`
-  allows. With both: "Which images should I add? 1) AI-generated and royalty-free stock
-  images, 2) royalty-free stock images only (free; you pick each photo from search
-  results), 3) AI-generated images only (uses your Ploxs credits), or 4) no images." With
-  only stock, offer stock images or none; with only
+  allows. With both: "Which images should I add? 1) AI-generated and royalty-free images,
+  2) royalty-free images only (free; you pick each one from search results), 3)
+  AI-generated images only (uses your Ploxs credits), or 4) no images." With only
+  `stock`, offer royalty-free images or none; with only
   `ai`, offer AI-generated images or none. The answer becomes this deck's sources with
   policy `auto`; "no images" means `on_request`. Skip the question when the request
   already says which images to use.
 - `on_request` - add only images the user explicitly asks for, from the source they name.
   When they ask for an image without saying which kind ("add an image to slide 4"), ask
-  before adding it: "Should I use a royalty-free stock photo (free, you pick it) or an
+  before adding it: "Should I use a royalty-free image (free, you pick it) or an
   AI-generated image (uses your Ploxs credits)?" Never choose for them, because one source spends
   credits. Skip the question only when `sources` lists a single source.
 - No `get_account_status` in this chat yet: treat the policy as `on_request`.
 
 Decide the shape of each image slot first.
 
-- **Stock**: call `prepare_stock_image_picker` once with every stock photo you want, each
-  with a description of what it shows and where it goes ("Slide 3: rain over a river
-  valley"), a few concrete English nouns to search ("rain river valley"), and an
+- **Royalty-free**: call `prepare_stock_image_picker` once with every royalty-free image you want, each
+  with the scene as the user will read it ("Rain falling over a misty river valley"), its
+  `slide`, its `purpose` ("Full background behind the title; needs calm space on the
+  left"), a few concrete English nouns to search ("rain river valley"), and an
   `orientation` that matches its box. Give the user the returned `pickerUrl`. The page
-  shows each search as thumbnails; the user picks a photo for each image, refines the
-  search, uploads their own, or skips it. You never see or choose the photos. While they
+  shows each image as a scene card with its search results; the user picks an image for
+  each, refines the search, uploads their own, or skips it, may rename a scene or add
+  scenes of their own, and presses Done. You do not choose the images. While they
   pick, author the frames with `<img data-ploxs-image-id="presentation_image_N">` in boxes
   with an explicit size and `object-fit: cover`. Then call
   `get_presentation_image_upload_status` with `wait_seconds: 45` (again while it is still
-  waiting), remove the `<img>` of any `skippedImageIds`, and pass the `sessionId` as
-  `asset_session_id`. Never put a `pixabay.com` URL on a slide. No on-slide credit is
-  needed; when the deck uses stock photos, say in one line of the final message that
-  they come from Pixabay.
+  waiting). The ready result shows each image as a thumbnail under its scene heading:
+  look at it and adjust its frame (a box whose shape keeps the subject in view, since
+  Google Slides crops from the centre; text over calm areas), follow any scene the user
+  renamed (`originalDescription` holds your wording), remove the `<img>` of any
+  `skippedImageIds`, add one for each scene the user added (`addedByUser`, placed where
+  its heading says), and pass the `sessionId` as `asset_session_id`. Never put a
+  `pixabay.com` URL on a slide. No on-slide credit is needed; when the deck uses
+  royalty-free images, say in one line of the final message that they come from Pixabay.
 - **Generated**: for a new deck, call `generate_image` after `get_html_frame_spec` with
   its `style_ref`; for an existing deck pass `deck_ref`. Request the slot's
   `aspect_ratio`, pass `requested_by: "auto"` for an image you chose to add and `"user"`
@@ -288,8 +297,8 @@ Frames convert exactly as authored. Follow the returned contract literally, espe
   model runs in this path.
 - If the user supplied their own photo for the slide, use the upload flow in
   "Supplied presentation images" and pass `asset_session_id` with the edit.
-- If the slide needs a picture (see "Images"; ask stock or AI-generated when the user
-  did not say): for a stock photo, open **`prepare_stock_image_picker`** so the user picks
+- If the slide needs a picture (see "Images"; ask royalty-free or AI-generated when the
+  user did not say): for a royalty-free image, open **`prepare_stock_image_picker`** so the user picks
   it, then place it as `<img data-ploxs-image-id="presentation_image_N">` and pass the
   picker's `sessionId` as `asset_session_id` with the edit (or `image_id` in a
   `replace_image` step). For a generated one, call **`generate_image`** with the deck ref
@@ -338,8 +347,8 @@ state at that operation.
 - Any error on an automatic image (`requested_by: "auto"`), including
   `INSUFFICIENT_CREDITS` and `auto_images_off`: build that slide without the image and
   keep going.
-- `stock_images_unavailable` from `prepare_stock_image_picker`: build without stock
-  photos, or offer a generated image under the rules above.
+- `stock_images_unavailable` from `prepare_stock_image_picker`: build without
+  royalty-free images, or offer a generated image under the rules above.
 
 Never invent a `deckRef` or slide number. On completion, label the Google Slides edit and
 view URLs and put each full URL on its own line.
