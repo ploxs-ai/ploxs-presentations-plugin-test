@@ -311,10 +311,25 @@ Frames convert exactly as authored. Follow the returned contract literally, espe
   `aspectRatio`, placed with `<img>` and fitted with `object-fit: cover` or a matching
   `aspect-ratio`, or passed as `image_url` in a `replace_image` step to swap a picture in
   place on a deck Ploxs did not make.
-- Put Chart.js markup directly in the authored frame using the returned chart protocol.
-  If the frame spec is truncated or the chart block is unavailable, call
-  **`get_chart_spec`**; it returns the library URL, rules, and complete working example
-  in both text and structuredContent.
+- **Charts in an edit go through the chart editor**, so the user sees and can adjust
+  them before the slide changes. Write the chart's Chart.js config (data only; pass
+  `format` for prefixes, suffixes, and decimals instead of tick callbacks), call
+  **`prepare_chart_editor`** with it plus the chart's box `width` and `height` in px,
+  and give the user the returned `editorUrl`. There they can switch the type (bar,
+  horizontal bar, stacked bar, line, area, pie, doughnut, radar), edit the title,
+  legend, category and series names, axis titles, values, and colours, then press
+  Done. Meanwhile author the slide with each chart as
+  `<canvas data-ploxs-chart-id="chart_N"></canvas>` and no script. Wait with
+  **`get_chart_editor_status`** (`wait_seconds` 45, again while waiting), re-check any
+  slide text that describes the chart against the `changes` it reports, and pass the
+  `sessionId` as `chart_session_id` with `edit_slide`, `add_slides`, or
+  `update_presentation`. If the user says to go ahead without reviewing, place the
+  charts right away; they are used as they stand. A new deck keeps Chart.js in its
+  frames as before.
+- Chart.js markup written directly in the authored frame still works with the returned
+  chart protocol. If the frame spec is truncated or the chart block is unavailable,
+  call **`get_chart_spec`**; it returns the library URL, rules, and complete working
+  example in both text and structuredContent.
 - To insert new slides, pass authored `frames` to **`add_slides`**. It inserts those
   frames at the end or before/after an anchor without replacing an existing slide.
   MCP insertion is HTML-only, so Ploxs does not design the inserted slides. For compound
@@ -340,6 +355,11 @@ state at that operation.
 - `active_job_limit` / `rate_limited` → wait, then retry.
 - `presentation_image_session_required` → run the upload flow and pass its
   `asset_session_id` with the same frames.
+- `chart_session_required` / `chart_reference_missing` / `chart_reference_invalid` →
+  place each chart from `prepare_chart_editor` as
+  `<canvas data-ploxs-chart-id="chart_N"></canvas>` and pass its `chart_session_id`.
+- `chart_not_placeable` → the user left a chart that cannot be drawn (for example a pie
+  with negative values); ask them to fix it on the same chart editor page.
 - `presentation_image_reference_missing` / `presentation_image_reference_invalid` →
   place each uploaded or picked image with an `imageId` the session returned, and leave
   out images the user skipped.
