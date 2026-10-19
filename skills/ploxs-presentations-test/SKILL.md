@@ -318,7 +318,8 @@ Frames convert exactly as authored. Follow the returned contract literally, espe
   and give the user the returned `editorUrl`. There they can switch the type (bar,
   horizontal bar, stacked bar, line, area, pie, doughnut, radar), edit the title,
   legend, category and series names, axis titles, values, and colours, then press
-  Done. Meanwhile author the slide with each chart as
+  Done, which sends the charts and closes the page (for later changes, call
+  `prepare_chart_editor` again for a new link). Meanwhile author the slide with each chart as
   `<canvas data-ploxs-chart-id="chart_N"></canvas>` and no script. Wait with
   **`get_chart_editor_status`** (`wait_seconds` 45, again while waiting), re-check any
   slide text that describes the chart against the `changes` it reports, and pass the
