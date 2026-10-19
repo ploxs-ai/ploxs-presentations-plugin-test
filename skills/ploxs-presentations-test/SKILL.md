@@ -316,13 +316,16 @@ Frames convert exactly as authored. Follow the returned contract literally, espe
   `format` for prefixes, suffixes, and decimals instead of tick callbacks), call
   **`prepare_chart_editor`** with it plus the chart's box `width` and `height` in px,
   and give the user the returned `editorUrl`. There they can switch the type (bar,
-  horizontal bar, stacked bar, line, area, pie, doughnut, radar), edit the title,
-  legend, category and series names, axis titles, values, and colours, then press
+  horizontal bar, stacked bar, line, area, pie, doughnut, radar), flip it, stack it
+  (or stack to 100%), edit the title, legend, category and series names, axis titles,
+  values, and colours, drag the legend and title, add notes and target or average
+  lines, then press
   Done, which sends the charts and closes the page (for later changes, call
   `prepare_chart_editor` again for a new link). Meanwhile author the slide with each chart as
   `<canvas data-ploxs-chart-id="chart_N"></canvas>` and no script. Wait with
   **`get_chart_editor_status`** (`wait_seconds` 45, again while waiting), re-check any
-  slide text that describes the chart against the `changes` it reports, and pass the
+  slide text that describes the chart against the `changes` it reports (notes and
+  lines the user added are drawn on the chart, so do not repeat them as slide text), and pass the
   `sessionId` as `chart_session_id` with `edit_slide`, `add_slides`, or
   `update_presentation`. If the user says to go ahead without reviewing, place the
   charts right away; they are used as they stand. A new deck keeps Chart.js in its
