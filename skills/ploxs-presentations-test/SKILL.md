@@ -95,9 +95,9 @@ photos.
 
 ## Images
 
-Images come from two sources. Royalty-free images from Pixabay or Unsplash are free, and
-the user picks them: **`prepare_stock_image_picker`** opens a page of scene cards with
-thumbnails for your searches (Pixabay first; the user can switch any card to Unsplash).
+Images come from two sources. Royalty-free images from Pixabay, Unsplash, or Wikimedia
+Commons are free, and the user picks them: **`prepare_stock_image_picker`** opens a page of
+scene cards with thumbnails for your searches (Pixabay first; the user can switch any card).
 Call them royalty-free images when talking to the user, never stock photos. AI-generated
 images (**`generate_image`**) spend the user's credits. Follow `generatedImages` from
 `get_account_status`: `policy` combines the user's Settings choice (on / off / ask every
@@ -129,7 +129,9 @@ Decide the shape of each image slot first.
   with the scene as the user will read it ("Rain falling over a misty river valley"), its
   `slide`, its `purpose` ("Full background behind the title; needs calm space on the
   left"), a few concrete English nouns to search ("rain river valley"), and an
-  `orientation` that matches its box. Give the user the returned `pickerUrl`. The page
+  `orientation` that matches its box. Set `commons: true` for a named real person, place,
+  event, species, or artwork, or a diagram or map: its card opens on Wikimedia Commons,
+  so search by the subject's name. Give the user the returned `pickerUrl`. The page
   shows each image as a scene card with its search results; the user picks an image for
   each, refines the search, uploads their own, or skips it, may rename a scene or add
   scenes of their own, and presses Done. You do not choose the images. While they
@@ -142,9 +144,10 @@ Decide the shape of each image slot first.
   renamed (`originalDescription` holds your wording), remove the `<img>` of any
   `skippedImageIds`, add one for each scene the user added (`addedByUser`, placed where
   its heading says), and pass the `sessionId` as `asset_session_id`. Never put a
-  `pixabay.com` URL on a slide. No on-slide credit is needed; when the deck uses
-  royalty-free images, say in one line of the final message which sources they come from
-  (each image's `credit` names Pixabay or Unsplash).
+  `pixabay.com` URL on a slide. Pixabay and Unsplash images need no on-slide credit; a
+  Wikimedia Commons image comes with `usageConditions` (usually a small credit on its
+  slide): follow them. When the deck uses royalty-free images, say in one line of the final
+  message which sources they come from (each image's `credit` names it).
 - **Generated**: for a new deck, call `generate_image` after `get_html_frame_spec` with
   its `style_ref`; for an existing deck pass `deck_ref`. Request the slot's
   `aspect_ratio`, pass `requested_by: "auto"` for an image you chose to add and `"user"`
