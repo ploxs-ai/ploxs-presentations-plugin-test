@@ -328,8 +328,10 @@ Frames convert exactly as authored. Follow the returned contract literally, espe
   lines the user added are drawn on the chart, so do not repeat them as slide text), and pass the
   `sessionId` as `chart_session_id` with `edit_slide`, `add_slides`, or
   `update_presentation`. If the user says to go ahead without reviewing, place the
-  charts right away; they are used as they stand. A new deck keeps Chart.js in its
-  frames as before.
+  charts right away; they are used as they stand. A pie or doughnut draws one series:
+  when the status lists `seriesPlacements`, the user wants every series shown, so place
+  each listed placeholder (`data-ploxs-chart-series`), one pie per series, side by side
+  or across slides, and leave none out. A new deck keeps Chart.js in its frames as before.
 - **A chart already on a slide, without its config** (a new chat, a deck built
   elsewhere): call `prepare_chart_editor` with `from_slide` (and `chart_index` if the
   slide has several charts) instead of `config`. Ploxs loads the chart as it was made.
