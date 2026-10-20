@@ -210,9 +210,9 @@ Use exactly one style source per call.
 ## Review the style
 
 `reviewSettings.styleReview` decides whether the user reviews a new deck's style:
-`review` (every style), `auto_saved` (a saved style from `list_style_configs`, from the
-Style Library or a recent deck, needs no review; any other style does), or `auto` (no
-review). An acceptance covers one deck: the next deck is reviewed again, even with the
+`review` (every style), `auto_saved` (a Style Library style the user picked, a saved or
+uploaded one from `list_style_configs`, needs no review; any other style does, including
+a recent deck's style), or `auto` (no review). An acceptance covers one deck: the next deck is reviewed again, even with the
 same style. Ploxs enforces it: `get_html_frame_spec` and
 `create_presentation_from_html` refuse with `style_review_required` until the user
 accepts. When `generatedImages.setting` is `ask`, the same page also asks which images
