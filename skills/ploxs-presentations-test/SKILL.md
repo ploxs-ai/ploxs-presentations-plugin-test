@@ -33,7 +33,10 @@ Tool results name the next step by number - trust that over your memory of this 
    hand the user the `uploadUrl`, then **`get_presentation_image_upload_status`** until
    `ready`. Reference them in the frames, never as a later edit.
 3. Style - one saved style the user picked, or one complete inline `style_config` drawn
-   from the deck's subject, not a default look.
+   from the deck's subject, not a default look. Show an inline style to the user first:
+   **`prepare_style_review`**, hand them the `reviewUrl`, wait with
+   **`get_style_review_status`**, and build only with the accepted `styleRef` (see
+   "Review the style").
 4. **`get_html_frame_spec`** once, author every final frame, then
    **`create_presentation_from_html`** **once**. Keep the returned `jobId` and `statusUrl`.
    Get any images for the deck (royalty-free or generated) between the spec and authoring - do
@@ -192,9 +195,38 @@ Use exactly one style source per call.
   explicitly requests validation; do not duplicate routine config payloads.
 - Never combine style sources.
 
+## Review the style
+
+Before building a new deck, the user sees the style on sample slides and accepts or
+rejects it. Skip this only for a saved style the user picked, or when they ask to skip it.
+
+- Call **`prepare_style_review`** with the style (inline `style_config`,
+  `style_config_id`, or a `style_ref`), the deck's real title as `deck_title`, and in
+  `preview` two to four of its real points and up to three real figures, so the user
+  judges the style on their own deck. Give them the returned `reviewUrl`. On the page
+  they can change the colours, fonts, layout, icon packs, and art direction, then press
+  Accept or Reject.
+- Wait with **`get_style_review_status`** (`wait_seconds` 45), re-calling while it
+  returns `awaiting_review`. Do not call `get_html_frame_spec` or author frames before
+  the style is accepted.
+- **Accepted:** the result's `styleRef` is exactly the reviewed style, with the user's
+  changes. Pass it as `style_ref` to `get_html_frame_spec` and
+  `create_presentation_from_html`; never retype or adjust it. Only if no `styleRef` came
+  back, pass the result's `styleConfig` unchanged as `style_config`.
+- **Rejected:** do not build with it. Unless the user's `note` already says how they
+  want the deck to look, ask once: describe the style in their own words, attach a style
+  guide or brand document, or share a website to take it from. Write a new complete
+  style from their answer (from a document or website, take its real colours, fonts,
+  and rules; from a description, their words win over your taste), call
+  `prepare_style_review` again with `previous_session_id`, and give them the new link.
+- If the user says in the chat to go ahead before pressing a button, build with the
+  status result's `styleRef`; if they ask for a different look in the chat, write it
+  and review again.
+
 ## Create the deck
 
-1. Call **`get_html_frame_spec`** once with the chosen style. Leave `include_chart_spec`
+1. Call **`get_html_frame_spec`** once with the chosen style (the accepted review's
+   `styleRef` as `style_ref`). Leave `include_chart_spec`
    at its default (true) - the chart plumbing is unguessable, so a deck that discovers
    mid-author that a slide compares quantities cannot add one without it. Pass false only
    for a deck you know carries no quantitative data. **Keep the returned `styleRef`.**
@@ -364,6 +396,8 @@ state at that operation.
 - `invalid_html_frames` → repair the reported frames; never retry unchanged.
 - `style_config_required` / `style_choice_conflict` / `invalid_style_config` → correct
   the single style input.
+- `style_review_expired` / `style_review_not_found` → call `prepare_style_review` again
+  for a new link; the user's earlier edits on the old link are not carried over.
 - `presentation_not_connected` → call `connect_presentation`.
 - `slide_not_found` → fetch the live outline again.
 - `active_job_limit` / `rate_limited` → wait, then retry.
