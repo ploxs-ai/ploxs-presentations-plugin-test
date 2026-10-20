@@ -8,6 +8,11 @@ description: Author and edit designed Google Slides decks in chat through the Pl
 Test server `ploxs-test` at `https://test.ploxs.com/mcp`. Accounts, credits, styles and
 decks are separate from production `ploxs.com` — never mix them in one conversation.
 
+The signed-in home is **Plugin** at `https://test.ploxs.com/mcp/setup`; signing in at
+`https://test.ploxs.com` lands there by default. The adjacent **Template** header link opens
+the template workspace at `https://test.ploxs.com/template`. Keep links on this plugin's
+host: production uses `ploxs.com`, and test uses `test.ploxs.com`.
+
 Use this workflow for the user's requested Ploxs presentation work. The chat agent owns
 slide design: it writes the final HTML/CSS, copy, layout, images, and Chart.js charts.
 Ploxs supplies hosted image generation, royalty-free image search, and icon
@@ -34,7 +39,7 @@ Tool results name the next step by number - trust that over your memory of this 
    `ready`. Reference them in the frames, never as a later edit.
 3. Style - one saved style the user picked, or one complete inline `style_config` drawn
    from the deck's subject, not a default look. When the settings have the user review
-   the style or choose the deck's images: **`prepare_style_review`**, hand them the
+   the style: **`prepare_style_review`**, hand them the
    `reviewUrl`, wait with **`get_style_review_status`**, and build only with the
    accepted `styleRef` (see "Review the style").
 4. **`get_html_frame_spec`** once, author every final frame, then
@@ -108,16 +113,22 @@ images (**`generate_image`**) spend the user's credits. Follow `generatedImages`
 `ai`, or `off`) with what the account can use, and `sources` lists the sources you may
 use (`stock` for royalty-free images, and `ai` when the account has credits or a
 membership). Ploxs enforces the setting: an image you chose to add (`requested_by:
-"auto"`) from a source the setting, or the deck's image choice, does not allow is refused.
+"auto"`) from a source the setting does not allow is refused.
 
 - `auto` - add images wherever you judge they make the deck better, from `sources` only,
   without overdoing it. With both sources, prefer a royalty-free image for real places,
   people, objects, food, and nature, and generate an image for a concept, a bespoke
   scene, or a slide no royalty-free image fits.
-- `ask_user` - the user chooses this deck's images on the style review page, together
-  with its style (`prepare_style_review`, checklist step 3); do not ask in the chat.
+- `ask_user` - the user chooses this deck's images once. When the style review page
+  opens for the deck (`prepare_style_review`, checklist step 3), it asks them there, and
   `get_style_review_status` reports `imageChoice`: `both`, `stock`, or `ai` means add
   images from those sources as under `auto`; `none` means only images the user asks for.
+  When no review page opens, ask once in the chat right after `get_account_status`,
+  offering only what `sources` allows. With both: "Which images should I add? 1)
+  AI-generated and royalty-free images, 2) royalty-free images only (free; you pick each
+  one from search results), 3) AI-generated images only (uses your Ploxs credits), or 4)
+  no images." The answer becomes this deck's sources; "no images" means `on_request`.
+  Skip the question when the request already says which images to use.
 - `on_request` - add only images the user explicitly asks for, from the source they name.
   When they ask for an image without saying which kind ("add an image to slide 4"), ask
   before adding it: "Should I use a royalty-free image (free, you pick it) or an
@@ -129,7 +140,7 @@ Decide the shape of each image slot first.
 
 - **Royalty-free**: call `prepare_stock_image_picker` once with every royalty-free image you
   want, with `requested_by` (`"auto"` for images you chose to add, `"user"` only for ones
-  the user asked for in the chat) and, for a new deck, the `style_ref`. Give each image
+  the user asked for in the chat). Give each image
   the scene as the user will read it ("Rain falling over a misty river valley"), its
   `slide`, its `purpose` ("Full background behind the title; needs calm space on the
   left"), a few concrete English nouns to search ("rain river valley"), and an
@@ -202,10 +213,10 @@ Use exactly one style source per call.
 `review` (every style), `auto_saved` (a saved style from `list_style_configs`, from the
 Style Library or a recent deck, needs no review; any other style does), or `auto` (no
 review). An acceptance covers one deck: the next deck is reviewed again, even with the
-same style. When `generatedImages.setting` is `ask`, the
-same page asks which images to add. Ploxs enforces both: `get_html_frame_spec` and
-`create_presentation_from_html` refuse with `style_review_required` or
-`image_choice_required` until the user accepts.
+same style. Ploxs enforces it: `get_html_frame_spec` and
+`create_presentation_from_html` refuse with `style_review_required` until the user
+accepts. When `generatedImages.setting` is `ask`, the same page also asks which images
+to add; when no review page opens, ask that question in the chat (see "Images").
 
 - A style you write must be complete: palette, fonts, `customStyleDirective`
   (`personality`, `headingWeight`, `bodyWeight`), `brandGuidelines` (`colorUsage`,
@@ -221,8 +232,8 @@ same page asks which images to add. Ploxs enforces both: `get_html_frame_spec` a
   returns `awaiting_review`. Ploxs builds only after the user presses Accept. If they say
   "go ahead" in the chat, tell them their settings always review the style, ask them to
   press Accept on the page, and tell them that if they do not want to review styles they
-  can change it at `/mcp/setup` on their Ploxs site (for example
-  `https://ploxs.com/mcp/setup`). Never skip a review the settings require.
+  can change it on their **Plugin** home at `https://test.ploxs.com/mcp/setup`.
+  Never skip a review the settings require.
 - **Accepted:** the result's `styleRef` is exactly the reviewed style, with the user's
   changes. Pass it as `style_ref` to `get_html_frame_spec`, `create_presentation_from_html`,
   and the image tools; never retype or adjust it. Only if no `styleRef` came back, pass
@@ -409,18 +420,18 @@ state at that operation.
 - `invalid_html_frames` → repair the reported frames; never retry unchanged.
 - `style_config_required` / `style_choice_conflict` / `invalid_style_config` → correct
   the single style input.
-- `style_review_required` / `image_choice_required` → the user's settings always review
-  the style or the deck's images: run `prepare_style_review` and wait for Accept. A user
-  who does not want reviews changes the setting at `/mcp/setup`; never skip it yourself.
+- `style_review_required` → the user's settings always review the style: run
+  `prepare_style_review` and wait for Accept. A user
+  who does not want reviews changes the setting at `https://test.ploxs.com/mcp/setup`; never skip it yourself.
 - `incomplete_style_config` → add the missing art direction to the style; never drop to
   a palette and fonts.
 - `style_review_expired` / `style_review_not_found` → call `prepare_style_review` again
   for a new link; the user's earlier edits on the old link are not carried over.
-- `auto_image_not_allowed` / `auto_images_off` → the user's settings or this deck's image
-  choice do not allow that automatic image; build without it.
+- `auto_image_not_allowed` / `auto_images_off` → the user's image setting does not allow
+  that automatic image; build without it.
 - `chart_review_required` → the user's settings always review chart edits: give them the
   chart editor link and wait for Done before placing the chart. A user who does not want
-  that changes the setting at `/mcp/setup`.
+  that changes the setting at `https://test.ploxs.com/mcp/setup`.
 - `presentation_not_connected` → call `connect_presentation`.
 - `slide_not_found` → fetch the live outline again.
 - `active_job_limit` / `rate_limited` → wait, then retry.

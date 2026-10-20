@@ -78,7 +78,9 @@ Claude simply resumes waiting if it's cut short.
 
 ## Before it can create decks
 
-Sign in at [test.ploxs.com](https://test.ploxs.com) and connect Google Drive in Settings.
+Sign in at [test.ploxs.com/mcp/setup](https://test.ploxs.com/mcp/setup), the **Plugin**
+home, and connect Google Drive. The adjacent **Template** header link opens the
+template workspace at [test.ploxs.com/template](https://test.ploxs.com/template).
 Generated images need usage available. Ploxs creates the Slides file in your own
 Drive, so Drive linking cannot be done headlessly from Claude. Test accounts, styles,
 credits, and decks are separate from production.
