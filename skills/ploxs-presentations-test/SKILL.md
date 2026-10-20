@@ -34,18 +34,21 @@ Tool results name the next step by number - trust that over your memory of this 
 1. **`get_account_status`** - Google Drive must be connected (see below). Its
    `reviewSettings` and `generatedImages` are the user's settings, and Ploxs enforces
    them: a tool refuses a step the settings have not cleared and says what to do instead.
-2. Images already supplied for the deck - **`prepare_presentation_image_upload`** once,
-   hand the user the `uploadUrl`, then **`get_presentation_image_upload_status`** until
-   `ready`. Reference them in the frames, never as a later edit.
+2. Images - note every image the user supplied for the deck (attachments, images made
+   earlier in the chat) and any royalty-free or AI images the settings allow. They all
+   go in **one** image portal at step 4. Never drop or replace a supplied image, and
+   never defer it to a later edit.
 3. Style - one saved style the user picked, or one complete inline `style_config` drawn
    from the deck's subject, not a default look. When the settings have the user review
    the style: **`prepare_style_review`**, hand them the
    `reviewUrl`, wait with **`get_style_review_status`**, and build only with the
    accepted `styleRef` (see "Review the style").
-4. **`get_html_frame_spec`** once, author every final frame, then
-   **`create_presentation_from_html`** **once**. Keep the returned `jobId` and `statusUrl`.
-   Get any images for the deck (royalty-free or generated) between the spec and authoring - do
-   not overdo it; a failed automatic image never stops the deck.
+4. **`get_html_frame_spec`** once. With images: **`prepare_image_portal`** once with its
+   `style_ref`, hand the user the `portalUrl`, and wait with
+   **`get_presentation_image_upload_status`** until `ready` (when every image is an AI
+   image, ask first - see "Images"). Author every final frame, then
+   **`create_presentation_from_html`** **once**. Keep the returned `jobId` and
+   `statusUrl`. Do not overdo images; a failed automatic image never stops the deck.
 5. **`wait_for_presentation`** with that `jobId`; if the client exposes only the compatible
    **`get_presentation_status`** name, use it instead. Each call waits ~45s; `timedOut: true`
    means **still building, not failed** - continue polling while the task is active,
@@ -61,7 +64,8 @@ Tool results name the next step by number - trust that over your memory of this 
 1. Call **`get_account_status`** before every initial deck. If
    `google.driveConnected` is false, give the user `links.googleDrive` / `links.settings`
    and wait. Creating a deck from authored HTML frames, authored edits, and royalty-free
-   royalty-free images are credit-free; only **`generate_image`** uses credits. The same result
+   images are credit-free; only AI images (AI scenes on the image portal, or
+   **`generate_image`**) use credits. The same result
    carries the user's settings: `reviewSettings.styleReview` (review, auto_saved, or
    auto), `reviewSettings.chartReview` (review or auto), and `generatedImages`
    (`setting`, `policy`, `sources`).
@@ -77,43 +81,32 @@ status updates, and final links unless the user asks for explanation. Do not nar
 reasoning, write a prose slide plan, explain design choices, or print frame HTML before
 submitting it.
 
-## Supplied presentation images
-
-For images already supplied for the deck, including images generated earlier in the
-chat, call **`prepare_presentation_image_upload`** with their exact unique filenames,
-exactly as the chat shows them, and pass `descriptions`: a short description of what
-each image shows (for example "Rule 30 diagram"). Never rename a file or use a copy from
-your own file system or sandbox. Some chat apps show generated names instead of the user's
-real ones; the upload page lists each image by its description so the user picks the
-right file under any filename. Never ask the user to rename a file. Give the single
-`uploadUrl` to the user, and wait until **`get_presentation_image_upload_status`** returns
-`ready`; the user may upload them in several selections from different folders, rename a
-scene, or add scenes of their own (`addedByUser`; place those too). The ready result
-shows each image as a thumbnail under its scene heading: look at it before you place it. Pass
-the `sessionId` as `asset_session_id` to **`create_presentation_from_html`**, and reference the returned ids in the frames with
-`<img data-ploxs-image-id="presentation_image_N">`. Do not create the deck without
-supplied images or swap in royalty-free or generated replacements for them. Write the descriptions yourself; never ask the user for them.
-
-The same flow works after the deck exists. When the user shares a photo for an existing
-deck ("put this photo on slide 2"), make the upload your first step, exactly as at
-creation, before reading or inlining the image any other way. Then place the image in
-the `edit_slide` html, the `add_slides` frames, or the `update_presentation` operations,
-and pass the `sessionId` as `asset_session_id` with the same `deck_ref`. Each edit may
-place only some of the session's images. Never create a new deck to add the user's
-photos.
-
 ## Images
 
-Images come from two sources. Royalty-free images from Pixabay, Unsplash, or Wikimedia
-Commons are free, and the user picks them: **`prepare_stock_image_picker`** opens a page of
-scene cards with thumbnails for your searches (Pixabay first; the user can switch any card).
-Call them royalty-free images when talking to the user, never stock photos. AI-generated
-images (**`generate_image`**) spend the user's credits. Follow `generatedImages` from
-`get_account_status`: `policy` combines the user's setting (`ask`, `both`, `stock`,
-`ai`, or `off`) with what the account can use, and `sources` lists the sources you may
-use (`stock` for royalty-free images, and `ai` when the account has credits or a
-membership). Ploxs enforces the setting: an image you chose to add (`requested_by:
-"auto"`) from a source the setting does not allow is refused.
+Every image goes through one page, the image portal: **`prepare_image_portal`** takes one
+scene per image, each of one kind:
+
+- `upload` - an image the user supplied in the chat (pass its `filename` exactly as the
+  chat shows it), or one they will add, such as their logo.
+- `stock` - a royalty-free image from Pixabay, Unsplash, or Wikimedia Commons that the user
+  picks; free.
+- `ai` - an AI-generated image: you write the `prompt`, and the user may edit it, add up
+  to 4 reference images (their product, a person, a logo, a look to match), and
+  generate it; it uses their credits.
+
+On the page the user fills each scene, may skip any, turn a royalty-free scene into an AI
+image or back, upload their own for any scene, rename scenes, or add scenes of their own,
+then presses Done. You do not choose or make these images. Put every image of one deck,
+or of one edit, in **one** portal. Call them royalty-free images when talking to the
+user, never stock photos.
+
+Follow `generatedImages` from `get_account_status`: `policy` combines the user's setting
+(`ask`, `both`, `stock`, `ai`, or `off`) with what the account can use, and `sources`
+lists the sources you may add (`stock` for royalty-free images, and `ai` when the account
+has credits or a membership). Ploxs enforces the setting: a scene you chose to add
+(`requested_by: "auto"`) from a source the setting does not allow is left off the portal
+(the result's `leftOff` says which and why), and `generate_image` refuses it. An AI image
+the user asked for on an account without credits is refused with the billing link.
 
 - `auto` - add images wherever you judge they make the deck better, from `sources` only,
   without overdoing it. With both sources, prefer a royalty-free image for real places,
@@ -134,40 +127,73 @@ membership). Ploxs enforces the setting: an image you chose to add (`requested_b
   before adding it: "Should I use a royalty-free image (free, you pick it) or an
   AI-generated image (uses your Ploxs credits)?" Never choose for them, because one source spends
   credits. Skip the question only when `sources` lists a single source.
+- **Only AI images** (nothing the user supplied, nothing royalty-free): the portal is
+  optional. Ask once: "Do you want to review the AI image prompts or add reference images
+  (for example your product, or a photo of a person) before I generate them?" Yes: put
+  them as `ai` scenes on `prepare_image_portal`. No: call `generate_image` for each, with
+  no portal. Skip the question when the user already said.
 - No `get_account_status` in this chat yet: treat the policy as `on_request`.
 
 Decide the shape of each image slot first.
 
-- **Royalty-free**: call `prepare_stock_image_picker` once with every royalty-free image you
-  want, with `requested_by` (`"auto"` for images you chose to add, `"user"` only for ones
-  the user asked for in the chat). Give each image
-  the scene as the user will read it ("Rain falling over a misty river valley"), its
-  `slide`, its `purpose` ("Full background behind the title; needs calm space on the
-  left"), a few concrete English nouns to search ("rain river valley"), and an
-  `orientation` that matches its box. Set `commons: true` for a named real person, place,
-  event, species, or artwork, or a diagram or map: its card opens on Wikimedia Commons,
-  so search by the subject's name. Give the user the returned `pickerUrl`. The page
-  shows each image as a scene card with its search results; the user picks an image for
-  each, refines the search, uploads their own, or skips it, may rename a scene or add
-  scenes of their own, and presses Done. You do not choose the images. While they
-  pick, author the frames with `<img data-ploxs-image-id="presentation_image_N">` in boxes
-  with an explicit size and `object-fit: cover`. Then call
-  `get_presentation_image_upload_status` with `wait_seconds: 45` (again while it is still
-  waiting). The ready result shows each image as a thumbnail under its scene heading:
-  look at it and adjust its frame (a box whose shape keeps the subject in view, since
-  Google Slides crops from the centre; text over calm areas), follow any scene the user
-  renamed (`originalDescription` holds your wording), remove the `<img>` of any
-  `skippedImageIds`, add one for each scene the user added (`addedByUser`, placed where
-  its heading says), and pass the `sessionId` as `asset_session_id`. Never put a
-  `pixabay.com` URL on a slide. Pixabay and Unsplash images need no on-slide credit; a
-  Wikimedia Commons image comes with `usageConditions` (usually a small credit on its
-  slide): follow them. When the deck uses royalty-free images, say in one line of the final
-  message which sources they come from (each image's `credit` names it).
-- **Generated**: for a new deck, call `generate_image` after `get_html_frame_spec` with
-  its `style_ref`; for an existing deck pass `deck_ref`. Request the slot's
-  `aspect_ratio`, pass `requested_by: "auto"` for an image you chose to add and `"user"`
-  only for one the user asked for in the chat, and place the returned `assetUrl` with `<img>`, fitted to
-  the returned `widthPx`/`heightPx` as the contract describes.
+**The portal.** For a new deck, call `prepare_image_portal` after `get_html_frame_spec`
+with its `style_ref`; for an existing deck pass `deck_ref`. Pass the style with any
+scenes, so the user can add AI images too. Give every scene the heading the user will
+read ("Rain falling over a misty river valley"), its `slide`, and its `purpose` ("Full
+background behind the title; needs calm space on the left"), and `requested_by` on each
+`stock` and `ai` scene (`"auto"` for images you chose to add, `"user"` only for ones the
+user asked for in the chat).
+
+- `upload` scenes: the exact `filename` of each supplied image, including images
+  generated earlier in the chat, and a heading of what it shows (for example "Rule 30
+  diagram"). Never rename a file or use a copy from your own file system or sandbox. Some
+  chat apps show generated names instead of the user's real ones; the portal lists each
+  image by its heading so the user picks the right file under any filename. Never ask the
+  user to rename a file, and write the headings yourself.
+- `stock` scenes: a few concrete English nouns to search (`query`, "rain river valley")
+  and an `orientation` that matches the box. Set `commons: true` for a named real person,
+  place, event, species, or artwork, or a diagram or map: its card opens on Wikimedia
+  Commons, so search by the subject's name.
+- `ai` scenes: the `prompt` (subject, setting, light, mood, and style; the deck style is
+  added for you) and the box's `aspect_ratio`. When the user will add reference images,
+  say how to use them ("the espresso machine from the reference image, on a marble
+  counter").
+
+Give the user the returned `portalUrl`. While they work on it, author the frames with
+`<img data-ploxs-image-id="presentation_image_N">` in boxes with an explicit size and
+`object-fit: cover`. Then call `get_presentation_image_upload_status` with
+`wait_seconds: 45` (again while it is still waiting). The ready result shows each image
+as a thumbnail under its scene heading: look at it and adjust its frame (a box whose
+shape keeps the subject in view, since Google Slides crops from the centre; text over
+calm areas), follow any scene the user renamed (`originalDescription` holds your
+wording), remove the `<img>` of any `skippedImageIds`, add one for each scene the user
+added (`addedByUser`, placed where its heading says), and pass the `sessionId` as
+`asset_session_id`. AI images made on the portal are placed the same way (`generated`
+holds the prompt they were made from, which the user may have edited); they have no
+`assetUrl`. Never put a `pixabay.com` URL on a slide. Pixabay and Unsplash images need no
+on-slide credit; a Wikimedia Commons image comes with `usageConditions` (usually a small
+credit on its slide): follow them. When the deck uses royalty-free images, say in one
+line of the final message which sources they come from (each image's `credit` names it).
+Do not create the deck without supplied images or swap in royalty-free or generated
+replacements for them.
+
+The same flow works after the deck exists. When the user shares a photo for an existing
+deck ("put this photo on slide 2"), make the portal your first step, exactly as at
+creation, before reading or inlining the image any other way. Then place the image in
+the `edit_slide` html, the `add_slides` frames, or the `update_presentation` operations,
+and pass the `sessionId` as `asset_session_id` with the same `deck_ref`. Each edit may
+place only some of the session's images. Never create a new deck to add the user's
+photos.
+
+**Straight to AI** (`generate_image`, when only AI images are wanted and the user does not
+want to review them): for a new deck pass the spec's `style_ref`; for an existing deck
+pass `deck_ref`. Request the slot's `aspect_ratio`, pass `requested_by`, and place the
+returned `assetUrl` with `<img>`, fitted to the returned `widthPx`/`heightPx` as the
+contract describes.
+
+Clients without `prepare_image_portal` still have the older
+`prepare_presentation_image_upload` (supplied images) and `prepare_stock_image_picker`
+(royalty-free images); they open the same page without AI scenes.
 
 An automatic image that fails, or credits that run out, never stops the deck: compose
 that slide without the image (or with a clean placeholder panel in the deck style), make no more `generate_image` calls for the deck after a credit error, and
@@ -355,14 +381,14 @@ Frames convert exactly as authored. Follow the returned contract literally, espe
   as `html`; Ploxs validates the frame, resolves `__ICON_<keywords>__` through its
   hosted icon library, converts it, and replaces the selected slide. No Ploxs design
   model runs in this path.
-- If the user supplied their own photo for the slide, use the upload flow in
-  "Supplied presentation images" and pass `asset_session_id` with the edit.
+- If the user supplied their own photo for the slide, put it on the image portal as an
+  `upload` scene (see "Images") and pass `asset_session_id` with the edit.
 - If the slide needs a picture (see "Images"; ask royalty-free or AI-generated when the
-  user did not say): for a royalty-free image, open **`prepare_stock_image_picker`** so the user picks
-  it, then place it as `<img data-ploxs-image-id="presentation_image_N">` and pass the
-  picker's `sessionId` as `asset_session_id` with the edit (or `image_id` in a
-  `replace_image` step). For a generated one, call **`generate_image`** with the deck ref
-  and a precise prompt; it returns a public `assetUrl`, pixel dimensions, and the actual
+  user did not say): open **`prepare_image_portal`** with the deck ref and a `stock` or
+  `ai` scene for it, then place it as `<img data-ploxs-image-id="presentation_image_N">`
+  and pass the portal's `sessionId` as `asset_session_id` with the edit (or `image_id` in
+  a `replace_image` step). For an AI image the user does not want to review, call
+  **`generate_image`** with the deck ref and a precise prompt; it returns a public `assetUrl`, pixel dimensions, and the actual
   `aspectRatio`, placed with `<img>` and fitted with `object-fit: cover` or a matching
   `aspect-ratio`, or passed as `image_url` in a `replace_image` step to swap a picture in
   place on a deck Ploxs did not make.
@@ -454,15 +480,16 @@ state at that operation.
   out images the user skipped.
 - `presentation_image_upload_not_ready` → wait for the status to report `ready`;
   `presentation_image_upload_expired` → create a new upload link.
-- Entitlement or credit errors from **`generate_image`** on an image the user asked
+- Entitlement or credit errors from **`generate_image`** or **`prepare_image_portal`** on an image the user asked
   for: report the billing link and wait. HTML-frame creation and authored edits remain
   credit-free. After the user recharges or usage becomes available, continue in this
   same chat and retry the original tool call with the existing job or deck context.
 - Any error on an automatic image (`requested_by: "auto"`), including
   `INSUFFICIENT_CREDITS` and `auto_images_off`: build that slide without the image and
   keep going.
-- `stock_images_unavailable` from `prepare_stock_image_picker`: build without
-  royalty-free images, or offer a generated image under the rules above.
+- A royalty-free scene left off the portal because royalty-free images are unavailable
+  (or `stock_images_unavailable` from the older `prepare_stock_image_picker`): build
+  without royalty-free images, or offer an AI image under the rules above.
 
 Never invent a `deckRef` or slide number. On completion, label the Google Slides edit and
 view URLs and put each full URL on its own line.
