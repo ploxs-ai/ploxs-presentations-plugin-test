@@ -157,7 +157,9 @@ user asked for in the chat).
 - `ai` scenes: the `prompt` (subject, setting, light, mood, and style; the deck style is
   added for you) and the box's `aspect_ratio`. When the user will add reference images,
   say how to use them ("the espresso machine from the reference image, on a marble
-  counter").
+  counter"). When the image shows a real product, person, place, or logo, add a
+  `reference_query` ("Breville Barista Express"): the card's Find references searches it
+  on royalty-free sources and Google Images.
 
 Give the user the returned `portalUrl`. While they work on it, author the frames with
 `<img data-ploxs-image-id="presentation_image_N">` in boxes with an explicit size and
