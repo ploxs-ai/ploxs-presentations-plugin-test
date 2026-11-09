@@ -90,7 +90,7 @@ scene per image, each of one kind:
   chat shows it), or, with no `filename`, one that should be the user's own, such as
   their team, product, office, screenshot, or logo. That card opens ready for them to
   add it, and still offers a royalty-free or AI image if they have none.
-- `stock` - a royalty-free image from Pixabay, Unsplash, or Wikimedia Commons that the user
+- `stock` - a royalty-free image from Unsplash, Wikimedia Commons, or Pixabay that the user
   picks; free.
 - `ai` - an AI-generated image: you write the `prompt`, and the user may edit it, add up
   to 4 reference images (their product, a person, a logo, a look to match), and
