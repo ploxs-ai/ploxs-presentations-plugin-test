@@ -34,7 +34,7 @@ Tool results name the next step by number - trust that over your memory of this 
 1. **`get_account_status`** - Google Drive must be connected (see below). Its
    `reviewSettings` and `generatedImages` are the user's settings, and Ploxs enforces
    them: a tool refuses a step the settings have not cleared and says what to do instead.
-   `decks.remaining` is how many new decks the account may still make; a new deck, or
+   `billing.decks.remaining` is how many new decks the account may still make; a new deck, or
    connecting a deck that is new to the account, uses one, and edits never do. At 0, do
    not author a deck: tell the user, give them the link the result names, and offer to
    edit an existing deck instead.
