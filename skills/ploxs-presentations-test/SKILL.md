@@ -58,9 +58,9 @@ Tool results name the next step by number - trust that over your memory of this 
    means **still building, not failed** - continue polling while the task is active,
    subject to the stopping conditions above. When it finishes, fix any **LAYOUT CHECK**
    slide it lists (`layoutWarnings`) with **`edit_slide`** first.
-6. Finish with the full Google Slides edit and view URLs on separate lines. Then share
+6. Finish with the full Google Slides edit URL on its own line. Then share
    the returned `mcpGuideUrl`, a short page of follow-up prompts the user can copy to keep
-   editing the deck. If you never got the deck links, give the user the `statusUrl`.
+   editing the deck. If you never got the deck link, give the user the `statusUrl`.
    Never ask the user for a link.
 
 ## Start
@@ -84,6 +84,12 @@ The presentation is the deliverable. Keep chat to required questions/actions, te
 status updates, and final links unless the user asks for explanation. Do not narrate
 reasoning, write a prose slide plan, explain design choices, or print frame HTML before
 submitting it.
+
+The user sees only your replies, never a tool result. A page link they must open
+(`portalUrl`, `editorUrl`, `reviewUrl`) goes in your reply before you wait on it. If a
+status tool says the page has not been opened, do as it says: show the link again, and
+when told to, end your turn with it instead of waiting. End a finished deck or edit with
+the deck's edit link, copied exactly as the tool gave it.
 
 ## Images
 
@@ -530,5 +536,5 @@ state at that operation.
   (or `stock_images_unavailable` from the older `prepare_stock_image_picker`): build
   without royalty-free images, or offer an AI image under the rules above.
 
-Never invent a `deckRef` or slide number. On completion, label the Google Slides edit and
-view URLs and put each full URL on its own line.
+Never invent a `deckRef` or slide number. On completion, put the full Google Slides
+edit URL on its own line.
